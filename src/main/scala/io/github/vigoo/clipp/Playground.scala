@@ -52,7 +52,9 @@ object Playground {
     Parser.extractParameters(args, paramSpec) match {
       case Left(error) =>
         println(error)
-        println(UsageInfo.getUsageDescription(paramSpec).edges.mkString("\n"))
+
+        val usageGraph = UsageInfo.getUsageDescription(paramSpec)
+        println(UsageInfo.prettyPrint(usageGraph))
       case Right(result) =>
         println(result)
     }

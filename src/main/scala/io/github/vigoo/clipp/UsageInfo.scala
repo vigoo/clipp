@@ -11,14 +11,18 @@ import org.atnos.eff._
 import org.atnos.eff.all._
 import org.atnos.eff.syntax.all._
 
+import scala.collection.mutable
+
 object UsageInfo {
 
+  case class DescribedParameter(parameter: Parameter[_], isInOptionalBlock: Boolean)
 
   type Choice = Any
   type Choices = Map[Parameter[_], Choice]
-  type ResultGraph = Graph[Parameter[_], Choices]
+  type MergedChoices = Map[Parameter[_], Set[Choice]]
+  type ResultGraph = Graph[DescribedParameter, Choices]
 
-  case class ExtractUsageInfoState(isInOptionalBlock: Boolean, last: Option[Parameter[_]], choices: Choices)
+  case class ExtractUsageInfoState(isInOptionalBlock: Boolean, last: Option[DescribedParameter], choices: Choices)
 
   private type UsageInfoExtractor = Fx.fx3[Choose, Writer[ResultGraph, ?], State[ExtractUsageInfoState, ?]]
   private type UsageInfoM[A] = Eff[UsageInfoExtractor, A]
@@ -53,6 +57,77 @@ object UsageInfo {
     combined
   }
 
+  def prettyPrint(usageDescription: ResultGraph): String = {
+    val usageNodes = usageDescription.toNodes
+    usageNodes.find(_.sourceNodes.isEmpty) match {
+      case Some(start) =>
+        val builder = mutable.StringBuilder.newBuilder
+
+        prettyPrintNode(start, builder)
+
+        builder.toString()
+      case None =>
+        "No usage info is available"
+    }
+  }
+
+  private def prettyPrintNode(node: Node[DescribedParameter, Choices], builder: mutable.StringBuilder, prefix: String = ""): Unit = {
+    builder.append(prefix)
+    node.value.parameter match {
+      case Flag(shortName, longNames, description) =>
+        builder.append(s"flag $shortName ($longNames) $description\n") // TODO
+      case NamedParameter(shortName, longNames, placeholder, description, _) =>
+        builder.append(s"named parameter $shortName ($longNames) $placeholder $description\n") // TODO
+      case SimpleParameter(placeholder, description, parameterParser) =>
+        builder.append(s"simple parameter $placeholder $description\n") // TODO
+      case Command(validCommands) =>
+        builder.append(s"command $validCommands\n") // TODO
+      case Optional(parameter) =>
+        builder.append("optional\n") // TODO
+    }
+
+    val orderedTargetNodes = node.targetNodes.toVector
+    val orderedMergedChoices = orderedTargetNodes.map(targetNode => mergeChoices(targetNode.labels))
+    val orderedFilteredChoices = withoutSharedChoices(orderedMergedChoices)
+
+    for (idx <- orderedTargetNodes.indices) {
+      val targetNode = orderedTargetNodes(idx)
+      if (orderedTargetNodes.size > 1) {
+        val choices = orderedFilteredChoices(idx)
+
+        builder.append(prefix)
+        builder.append(s"When $choices:\n")
+        prettyPrintNode(targetNode.to, builder, prefix + "  ")
+      }
+      else {
+        prettyPrintNode(targetNode.to, builder, prefix)
+      }
+    }
+
+    builder.append("\n")
+  }
+
+  private def withoutSharedChoices(mergedChoices: Vector[MergedChoices]): Vector[MergedChoices] = {
+    if (mergedChoices.nonEmpty) {
+      val sharedChoices =
+        mergedChoices.map(_.toSet).reduce { (result, cs) =>
+          result intersect cs
+        }
+
+      mergedChoices.map(cs => cs.toSet.diff(sharedChoices).toMap)
+    } else {
+      mergedChoices
+    }
+  }
+
+  private def mergeChoices(choices: Set[Choices]): MergedChoices = {
+    choices.foldLeft(Map.empty[Parameter[_], Set[Choice]]) { case (r1, cs) =>
+        cs.foldLeft(r1) { case (r2, (param, choice)) =>
+            r2.updated(param, r2.getOrElse(param, Set.empty) + choice)
+        }
+    }
+  }
+
   private object impl {
     private def getState: UsageInfoM[ExtractUsageInfoState] =
       get[UsageInfoExtractor, ExtractUsageInfoState]
@@ -68,12 +143,13 @@ object UsageInfo {
     private def record[T](parameter: Parameter[T], choice: T): UsageInfoM[Unit] =
       for {
         state <- getState
+        describedParameter = DescribedParameter(parameter, state.isInOptionalBlock)
         _ <- state.last match {
-          case Some(last) => tell[UsageInfoExtractor, ResultGraph](Graph.edge(last, parameter, state.choices))
+          case Some(last) => tell[UsageInfoExtractor, ResultGraph](Graph.edge(last, describedParameter, state.choices))
           case None => unit[UsageInfoExtractor]
         }
         _ <- put[UsageInfoExtractor, ExtractUsageInfoState](state.copy(
-          last = Some(parameter),
+          last = Some(describedParameter),
           choices = state.choices + (parameter -> choice)
         ))
       } yield ()
