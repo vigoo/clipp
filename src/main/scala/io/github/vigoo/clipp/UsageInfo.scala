@@ -6,11 +6,13 @@ import cats.free.Free
 import cats.implicits._
 import cats.instances.list.catsStdInstancesForList
 import cats.kernel.Monoid
-import io.github.vigoo.clipp.UsageInfo.ExtractUsageInfoState
+import io.github.vigoo.clipp.UsageInfo.{ExtractUsageInfoState, MergedChoices}
 import org.atnos.eff._
 import org.atnos.eff.all._
 import org.atnos.eff.syntax.all._
 
+import scala.annotation.tailrec
+import scala.collection.immutable.Queue
 import scala.collection.mutable
 
 object UsageInfo {
@@ -61,50 +63,140 @@ object UsageInfo {
     val usageNodes = usageDescription.toNodes
     usageNodes.find(_.sourceNodes.isEmpty) match {
       case Some(start) =>
-        val builder = mutable.StringBuilder.newBuilder
-
-        prettyPrintNode(start, builder)
-
-        builder.toString()
+        prettyPrint(preprocess(start, Set.empty).toList, 0, mutable.StringBuilder.newBuilder)
       case None =>
         "No usage info is available"
     }
   }
 
-  private def prettyPrintNode(node: Node[DescribedParameter, Choices], builder: mutable.StringBuilder, prefix: String = ""): Unit = {
-    builder.append(prefix)
-    node.value.parameter match {
-      case Flag(shortName, longNames, description) =>
-        builder.append(s"flag $shortName ($longNames) $description\n") // TODO
-      case NamedParameter(shortName, longNames, placeholder, description, _) =>
-        builder.append(s"named parameter $shortName ($longNames) $placeholder $description\n") // TODO
-      case SimpleParameter(placeholder, description, parameterParser) =>
-        builder.append(s"simple parameter $placeholder $description\n") // TODO
-      case Command(validCommands) =>
-        builder.append(s"command $validCommands\n") // TODO
-      case Optional(parameter) =>
-        builder.append("optional\n") // TODO
+  sealed trait PrettyPrintCommand
+  case class PrintNode(node: Node[DescribedParameter, Choices]) extends PrettyPrintCommand
+  case class PrintChoice(choice: MergedChoices) extends PrettyPrintCommand
+  case object StartBranch extends PrettyPrintCommand
+  case object ExitBranch extends PrettyPrintCommand
+
+  private val descriptionX = 40
+
+  private def prettyPrintOptionsAndDesc(level: Int, options: String, description: String, builder: StringBuilder): Unit = {
+    builder.append("  " * level)
+    builder.append(options)
+    val remainingSpace = descriptionX - (options.length + (level * 2))
+
+    if (remainingSpace < 0) {
+      builder.append('\n')
+      builder.append(" " * descriptionX)
+    } else {
+      builder.append(" " * remainingSpace)
+    }
+    builder.append(description)
+    builder.append('\n')
+  }
+
+  private def prettyPrintChoice(choice: (Parameter[_], Set[UsageInfo.Choice])): String = {
+
+    val (param, choices) = choice
+
+    val what =
+      param match {
+        case Flag(shortName, longNames, _) =>
+          shortName.map("-" + _).getOrElse("--" + longNames.head)
+        case NamedParameter(shortName, longNames, _, _, _) =>
+          shortName.map("-" + _).getOrElse("--" + longNames.head)
+        case SimpleParameter(placeholder, _, _) =>
+          s"<$placeholder>"
+        case Command(_) =>
+          "command"
+        case Optional(parameter) =>
+          throw new IllegalStateException(s"Optionals should have been prefiltered")
+      }
+
+    val values = choices.mkString(", ")
+
+    if (choices.size > 1) {
+      s"$what is one of $values"
+    } else {
+      s"$what is $values"
+    }
+  }
+
+  @tailrec
+  private def prettyPrint(cmds: List[PrettyPrintCommand], level: Int, builder: StringBuilder): String =
+    cmds match {
+      case Nil => builder.toString
+      case PrintNode(node) :: remaining =>
+        node.value.parameter match {
+          case Flag(shortName, longNames, description) =>
+            val allOptions = shortName.map("-" + _).toList ::: longNames.map("--" + _).toList
+            prettyPrintOptionsAndDesc(level, allOptions.mkString(", "), description, builder)
+
+          case NamedParameter(shortName, longNames, placeholder, description, _) =>
+            val allOptions = shortName.map(c => s"-$c <$placeholder>").toList ::: longNames.map(n => s"--$n <$placeholder>").toList
+            prettyPrintOptionsAndDesc(level, allOptions.mkString(", "), description, builder)
+
+          case SimpleParameter(placeholder, description, _) =>
+            prettyPrintOptionsAndDesc(level, s"<$placeholder>", description, builder)
+
+          case Command(validCommands) =>
+            prettyPrintOptionsAndDesc(level, s"<command>", s"One of ${validCommands.mkString(", ")}", builder)
+
+          case Optional(parameter) =>
+            throw new IllegalStateException(s"Optionals should have been prefiltered")
+        }
+        prettyPrint(remaining, level, builder)
+      case PrintChoice(choice) :: remaining =>
+        builder.append('\n')
+        builder.append("  " * level)
+        builder.append(s"When ${choice.map(prettyPrintChoice).mkString(", ")}:\n")
+        prettyPrint(remaining, level, builder)
+      case StartBranch :: remaining =>
+        prettyPrint(remaining, level + 1, builder)
+      case ExitBranch :: remaining =>
+        prettyPrint(remaining, level - 1, builder)
     }
 
-    val orderedTargetNodes = node.targetNodes.toVector
-    val orderedMergedChoices = orderedTargetNodes.map(targetNode => mergeChoices(targetNode.labels))
-    val orderedFilteredChoices = withoutSharedChoices(orderedMergedChoices)
+  def preprocess(node: Node[DescribedParameter, Choices],
+                  joinPoints: Set[Node[DescribedParameter, Choices]]): Vector[PrettyPrintCommand] = {
 
-    for (idx <- orderedTargetNodes.indices) {
-      val targetNode = orderedTargetNodes(idx)
-      if (orderedTargetNodes.size > 1) {
+    val orderedTargetNodes: Vector[TargetNode[DescribedParameter, Choices]] = node.targetNodes.toVector
+    val orderedMergedChoices = orderedTargetNodes.map(targetNode => mergeChoices(targetNode.labels))
+    val orderedFilteredChoices: Vector[MergedChoices] = withoutSharedChoices(orderedMergedChoices)
+
+    if (orderedTargetNodes.size > 1) {
+      // This is a branching point
+
+      // TODO: this should be based on the longest branch (?)
+      val to0 = orderedTargetNodes(0).to
+      val choices0 = orderedFilteredChoices(0)
+
+      val branch0 = preprocess(to0, joinPoints)
+      val newJoinPoints = branch0.collect { case PrintNode(n) => n }.toSet
+
+      val otherBranches = orderedTargetNodes.indices.toVector.tail.map { idx =>
+        val to = orderedTargetNodes(idx).to
         val choices = orderedFilteredChoices(idx)
 
-        builder.append(prefix)
-        builder.append(s"When $choices:\n")
-        prettyPrintNode(targetNode.to, builder, prefix + "  ")
+        (preprocess(to, newJoinPoints), choices)
       }
-      else {
-        prettyPrintNode(targetNode.to, builder, prefix)
+
+      val allBranches = ((branch0, choices0) +: otherBranches).map { case (branch, choices) =>
+        PrintChoice(choices) +: StartBranch +: branch :+ ExitBranch
+      }
+
+      PrintNode(node) +: allBranches.flatten
+    } else {
+      // No branching, go to next
+      orderedTargetNodes.headOption match {
+        case Some(next) =>
+          val nextNode = next.to
+          if (!joinPoints.contains(nextNode)) {
+            PrintNode(node) +: preprocess(nextNode, joinPoints)
+          } else {
+            Vector(PrintNode(node))
+          }
+        case None =>
+          Vector(PrintNode(node))
       }
     }
-
-    builder.append("\n")
   }
 
   private def withoutSharedChoices(mergedChoices: Vector[MergedChoices]): Vector[MergedChoices] = {
