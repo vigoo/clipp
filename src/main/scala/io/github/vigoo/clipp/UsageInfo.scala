@@ -70,17 +70,26 @@ object UsageInfo {
   }
 
   sealed trait PrettyPrintCommand
+
   case class PrintNode(node: Node[DescribedParameter, Choices]) extends PrettyPrintCommand
+
   case class PrintChoice(choice: MergedChoices) extends PrettyPrintCommand
+
   case object StartBranch extends PrettyPrintCommand
+
   case object ExitBranch extends PrettyPrintCommand
 
   private val descriptionX = 40
 
-  private def prettyPrintOptionsAndDesc(level: Int, options: String, description: String, builder: StringBuilder): Unit = {
+  private def prettyPrintOptionsAndDesc(level: Int, options: String, description: String, isOptional: Boolean, builder: StringBuilder): Unit = {
     builder.append("  " * level)
-    builder.append(options)
-    val remainingSpace = descriptionX - (options.length + (level * 2))
+    val finalOptions =
+      if (isOptional)
+        s"[$options]"
+      else
+      options
+    builder.append(finalOptions)
+    val remainingSpace = descriptionX - (finalOptions.length + (level * 2))
 
     if (remainingSpace < 0) {
       builder.append('\n')
@@ -89,6 +98,9 @@ object UsageInfo {
       builder.append(" " * remainingSpace)
     }
     builder.append(description)
+    if (isOptional) {
+      builder.append(" (optional)")
+    }
     builder.append('\n')
   }
 
@@ -127,17 +139,17 @@ object UsageInfo {
         node.value.parameter match {
           case Flag(shortName, longNames, description) =>
             val allOptions = shortName.map("-" + _).toList ::: longNames.map("--" + _).toList
-            prettyPrintOptionsAndDesc(level, allOptions.mkString(", "), description, builder)
+            prettyPrintOptionsAndDesc(level, allOptions.mkString(", "), description, node.value.isInOptionalBlock, builder)
 
           case NamedParameter(shortName, longNames, placeholder, description, _) =>
             val allOptions = shortName.map(c => s"-$c <$placeholder>").toList ::: longNames.map(n => s"--$n <$placeholder>").toList
-            prettyPrintOptionsAndDesc(level, allOptions.mkString(", "), description, builder)
+            prettyPrintOptionsAndDesc(level, allOptions.mkString(", "), description, node.value.isInOptionalBlock, builder)
 
           case SimpleParameter(placeholder, description, _) =>
-            prettyPrintOptionsAndDesc(level, s"<$placeholder>", description, builder)
+            prettyPrintOptionsAndDesc(level, s"<$placeholder>", description, node.value.isInOptionalBlock, builder)
 
           case Command(validCommands) =>
-            prettyPrintOptionsAndDesc(level, s"<command>", s"One of ${validCommands.mkString(", ")}", builder)
+            prettyPrintOptionsAndDesc(level, s"<command>", s"One of ${validCommands.mkString(", ")}", node.value.isInOptionalBlock, builder)
 
           case Optional(parameter) =>
             throw new IllegalStateException(s"Optionals should have been prefiltered")
@@ -155,7 +167,7 @@ object UsageInfo {
     }
 
   def preprocess(node: Node[DescribedParameter, Choices],
-                  joinPoints: Set[Node[DescribedParameter, Choices]]): Vector[PrettyPrintCommand] = {
+                 joinPoints: Set[Node[DescribedParameter, Choices]]): Vector[PrettyPrintCommand] = {
 
     val orderedTargetNodes: Vector[TargetNode[DescribedParameter, Choices]] = node.targetNodes.toVector
     val orderedMergedChoices = orderedTargetNodes.map(targetNode => mergeChoices(targetNode.labels))
@@ -214,9 +226,9 @@ object UsageInfo {
 
   private def mergeChoices(choices: Set[Choices]): MergedChoices = {
     choices.foldLeft(Map.empty[Parameter[_], Set[Choice]]) { case (r1, cs) =>
-        cs.foldLeft(r1) { case (r2, (param, choice)) =>
-            r2.updated(param, r2.getOrElse(param, Set.empty) + choice)
-        }
+      cs.foldLeft(r1) { case (r2, (param, choice)) =>
+        r2.updated(param, r2.getOrElse(param, Set.empty) + choice)
+      }
     }
   }
 
