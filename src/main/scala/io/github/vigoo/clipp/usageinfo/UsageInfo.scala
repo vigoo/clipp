@@ -31,7 +31,7 @@ object UsageInfo {
       case PathEnd(_) => Vector.empty
       case describedParameter: DescribedParameter =>
         val orderedTargetNodes: Vector[TargetNode[GraphNode, Choices]] = node.targetNodes.toVector.sortWith(sortByChoices)
-        val orderedMergedChoices = orderedTargetNodes.map(targetNode => mergeChoices(targetNode.labels))
+        val orderedMergedChoices = orderedTargetNodes.map(targetNode => withoutTotalChoices(mergeChoices(targetNode.labels)))
         val orderedFilteredChoices: Vector[MergedChoices] = withoutSharedChoices(orderedMergedChoices)
 
         if (orderedTargetNodes.size > 1) {
@@ -74,8 +74,16 @@ object UsageInfo {
   }
 
   private def sortByChoices(a: TargetNode[GraphNode, Choices], b: TargetNode[GraphNode, Choices]): Boolean = {
-    a.labels.flatMap(_.values.map(_.ordering)).min <
-      b.labels.flatMap(_.values.map(_.ordering)).min
+    implicitly[Ordering[Choice]].lt(
+      a.labels.flatMap(_.values).toList.min,
+      b.labels.flatMap(_.values).toList.min
+    )
+  }
+
+  private def withoutTotalChoices(mergedChoices: MergedChoices): MergedChoices = {
+    mergedChoices.filter { case (param, choices) =>
+      !Choice.isTotal(choices.toList)
+    }
   }
 
   private def withoutSharedChoices(mergedChoices: Vector[MergedChoices]): Vector[MergedChoices] = {

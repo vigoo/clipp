@@ -20,7 +20,39 @@ object UsageInfoExtractor {
 
   case class PathEnd(uniqueId: UUID) extends GraphNode
 
-  case class Choice(value: Any, ordering: Int)
+  sealed trait Choice {
+    def value: Any
+  }
+
+  object Choice {
+    implicit val ordering: Ordering[Choice] = (x: Choice, y: Choice) => {
+      (x, y) match {
+        case (BooleanChoice(v1), BooleanChoice(v2)) => (if (v1) 1 else 0) - (if (v2) 1 else 0)
+        case (c1: CommandChoice, c2: CommandChoice) => c1.valueIndex - c2.valueIndex
+        case (_, _) => 0
+
+      }
+    }
+
+    def isTotal(choices: List[Choice]): Boolean = {
+      choices match {
+        case List(BooleanChoice(v1), BooleanChoice(v2)) if v1 != v2 => true
+        case CommandChoice(v1, validValues) :: rest =>
+          val otherValues = rest.collect { case CommandChoice(v, vv) if validValues == vv => v }
+          otherValues.length == rest.length && ((otherValues.toSet + v1) == validValues.toSet)
+        case _ => false
+      }
+    }
+  }
+
+  case class BooleanChoice(value: Boolean) extends Choice
+
+  case class CommandChoice(value: String, validValues: List[String]) extends Choice {
+    val valueIndex: Int = validValues.indexOf(value)
+  }
+
+  case class ArbitraryChoice(value: Any) extends Choice
+
   type Choices = Map[Parameter[_], Choice]
   type MergedChoices = Map[Parameter[_], Set[Choice]]
   type ResultGraph = Graph[GraphNode, Choices]
@@ -73,7 +105,7 @@ object UsageInfoExtractor {
       } yield value
     }
 
-    private def record[T](parameter: Parameter[T], choice: T, ordering: Int): UsageInfoM[Unit] =
+    private def record[T](parameter: Parameter[T], choice: Choice): UsageInfoM[Unit] =
       for {
         state <- getState
         describedParameter = DescribedParameter(parameter, state.isInOptionalBlock)
@@ -83,7 +115,7 @@ object UsageInfoExtractor {
         }
         _ <- put[UsageInfoExtractor, ExtractUsageInfoState](state.copy(
           last = Some(describedParameter),
-          choices = state.choices + (parameter -> Choice(choice, ordering))
+          choices = state.choices + (parameter -> choice)
         ))
       } yield ()
 
@@ -104,26 +136,26 @@ object UsageInfoExtractor {
     def flag(flag: Flag): UsageInfoM[Boolean] = {
       for {
         enabled <- choice[Boolean](List(false, true))
-        _ <- record(flag, enabled, if (enabled) 1 else 0)
+        _ <- record(flag, BooleanChoice(enabled))
       } yield enabled
     }
 
     def namedParameter[T](namedParameter: NamedParameter[T], result: T): UsageInfoM[T] = {
       for {
-        _ <- record(namedParameter, result, 0)
+        _ <- record(namedParameter, ArbitraryChoice(result))
       } yield result
     }
 
     def simpleParameter[T](simpleParameter: SimpleParameter[T], result: T): UsageInfoM[T] = {
       for {
-        _ <- record(simpleParameter, result, 0)
+        _ <- record(simpleParameter, ArbitraryChoice(result))
       } yield result
     }
 
     def command(command: Command): UsageInfoM[String] = {
       for {
         choice <- choice[String](command.validCommands)
-        _ <- record(command, choice, command.validCommands.indexOf(choice))
+        _ <- record(command, CommandChoice(choice, command.validCommands))
       } yield choice
     }
 

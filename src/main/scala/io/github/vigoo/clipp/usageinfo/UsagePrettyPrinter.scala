@@ -62,7 +62,7 @@ object UsagePrettyPrinter {
               throw new IllegalStateException(s"Optionals should have been prefiltered")
           }
 
-        val values = choices.mkString(", ")
+        val values = choices.toList.sorted.map(_.value).mkString(", ")
 
         if (choices.size > 1) {
           s"$what is one of $values"

@@ -5,11 +5,11 @@ import java.io.File
 import cats.free.Free
 import io.github.vigoo.clipp.parsers._
 import io.github.vigoo.clipp.syntax._
-import io.github.vigoo.clipp.usageinfo.debug._
 import io.github.vigoo.clipp.usageinfo.UsageInfo._
-import io.github.vigoo.clipp.usageinfo.UsageInfoExtractor.{Choice, MergedChoices}
+import io.github.vigoo.clipp.usageinfo.UsageInfoExtractor.{BooleanChoice, CommandChoice, MergedChoices}
+import io.github.vigoo.clipp.usageinfo.debug._
 import io.github.vigoo.clipp.usageinfo.{UsageInfo, UsageInfoExtractor, UsagePrettyPrinter}
-import org.specs2.matcher.{MatchResult, Matcher}
+import org.specs2.matcher.Matcher
 import org.specs2.mutable.Specification
 
 class UsageInfoSpecs extends Specification {
@@ -52,7 +52,7 @@ class UsageInfoSpecs extends Specification {
       usageInfo should beSequenceOf(
         bePrintNodeOf(NamedParameter(Some('u'), Set("name", "username"), "name", "User name", implicitly[ParameterParser[String]])),
         bePrintNodeOf(Flag(Some('i'), Set("have-input"), "Switch for input")),
-        bePrintChoice(Map(Flag(Some('i'), Set("have-input"), "Switch for input") -> Set(Choice(true, 1)))),
+        bePrintChoice(Map(Flag(Some('i'), Set("have-input"), "Switch for input") -> Set(BooleanChoice(true)))),
         beStartBranch,
         bePrintNodeOf(SimpleParameter("file", "Input file", implicitly[ParameterParser[File]])),
         beExitBranch,
@@ -84,7 +84,7 @@ class UsageInfoSpecs extends Specification {
         bePrintNodeOf(Flag(None, Set("is3d"), "Is 3D?")),
         bePrintNodeOf(NamedParameter(Some('x'), Set.empty, "value", "X", implicitly[ParameterParser[Double]])),
         bePrintNodeOf(NamedParameter(Some('y'), Set.empty, "value", "Y", implicitly[ParameterParser[Double]])),
-        bePrintChoice(Map(Flag(None, Set("is3d"), "Is 3D?") -> Set(Choice(true, 1)))),
+        bePrintChoice(Map(Flag(None, Set("is3d"), "Is 3D?") -> Set(BooleanChoice(true)))),
         beStartBranch,
         bePrintNodeOf(NamedParameter(Some('z'), Set.empty, "value", "Z", implicitly[ParameterParser[Double]])),
         beExitBranch
@@ -112,31 +112,27 @@ class UsageInfoSpecs extends Specification {
       } yield result
 
       val graph = UsageInfoExtractor.getUsageDescription(spec)
-      println(graph.dot)
       val usageInfo = UsageInfo.generateUsageInfo(graph)
-      println(usageInfo.right.get.mkString("\n"))
-      println(UsagePrettyPrinter.prettyPrint(graph))
 
       usageInfo should beSequenceOf(
         bePrintNodeOf(Command(List("a", "b", "c"))),
-        bePrintChoice(Map(Command(List("a", "b", "c")) -> Set(Choice("a", 0)))),
+        bePrintChoice(Map(Command(List("a", "b", "c")) -> Set(CommandChoice("a", List("a", "b", "c"))))),
         beStartBranch,
         bePrintNodeOf(NamedParameter(Some('x'), Set.empty, "value", "X", implicitly[ParameterParser[Double]])),
         beExitBranch,
-        bePrintChoice(Map(Command(List("a", "b", "c")) -> Set(Choice("b", 1)))),
+        bePrintChoice(Map(Command(List("a", "b", "c")) -> Set(CommandChoice("b", List("a", "b", "c"))))),
         beStartBranch,
         bePrintNodeOf(NamedParameter(None, Set("y1"), "value", "Y1", implicitly[ParameterParser[Double]])),
         bePrintNodeOf(NamedParameter(None, Set("y2"), "value", "Y2", implicitly[ParameterParser[Double]])),
         beExitBranch,
-        bePrintChoice(Map(Command(List("a", "b", "c")) -> Set(Choice("c", 2)))),
+        bePrintChoice(Map(Command(List("a", "b", "c")) -> Set(CommandChoice("c", List("a", "b", "c"))))),
         beStartBranch,
         bePrintNodeOf(NamedParameter(Some('z'), Set.empty, "value", "Z", implicitly[ParameterParser[Double]])),
         beExitBranch
       )
-      ok // TODO
     }
 
-    "correctly print commands with intersecting subsets " in {
+    "correctly print commands with intersecting subsets" in {
       val spec = for {
         flag <- flag("Verbose", 'v')
         cmd <- command("a", "b", "c")
@@ -158,12 +154,28 @@ class UsageInfoSpecs extends Specification {
       } yield (flag, result)
 
       val graph = UsageInfoExtractor.getUsageDescription(spec)
-      println(graph.dot)
       val usageInfo = UsageInfo.generateUsageInfo(graph)
-      println(usageInfo.right.get.mkString("\n"))
-      println(UsagePrettyPrinter.prettyPrint(graph))
 
-      ok // TODO
+      usageInfo should beSequenceOf(
+        bePrintNodeOf(Flag(Some('v'), Set.empty, "Verbose")),
+        bePrintNodeOf(Command(List("a", "b", "c"))),
+        bePrintChoice(Map(Command(List("a", "b", "c")) -> Set(
+          CommandChoice("a", List("a", "b", "c")),
+          CommandChoice("c", List("a", "b", "c"))
+        ))),
+        beStartBranch,
+        bePrintNodeOf(NamedParameter(Some('x'), Set.empty, "value", "X", implicitly[ParameterParser[Double]])),
+        bePrintNodeOf(NamedParameter(Some('y'), Set.empty, "value", "Y", implicitly[ParameterParser[Double]])),
+        bePrintChoice(Map(Command(List("a", "b", "c")) -> Set(CommandChoice("c", List("a", "b", "c"))))),
+        beStartBranch,
+        bePrintNodeOf(NamedParameter(Some('z'), Set.empty, "value", "Z", implicitly[ParameterParser[Double]])),
+        beExitBranch,
+        beExitBranch,
+        bePrintChoice(Map(Command(List("a", "b", "c")) -> Set(CommandChoice("b", List("a", "b", "c"))))),
+        beStartBranch,
+        bePrintNodeOf(SimpleParameter("name", "Name", implicitly[ParameterParser[String]])),
+        beExitBranch,
+      )
     }
   }
 
