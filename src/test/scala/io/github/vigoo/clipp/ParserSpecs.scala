@@ -1,6 +1,7 @@
 package io.github.vigoo.clipp
 
 import java.io.File
+import java.nio.file.Paths
 
 import cats.data.NonEmptyList
 import cats.free.Free
@@ -27,7 +28,7 @@ class ParserSpecs extends Specification {
     verbose <- flag("Verbosity", 'v', "verbose")
     input <- parameter[File]("Input file", "file")
     output <- parameter[File]("Output file", "file")
-  } yield (name, verbose, input.getAbsolutePath, output.getAbsolutePath)
+  } yield (name, verbose, input.toPath, output.toPath)
 
   private val specCommand = for {
     verbose <- flag("Verbosity", 'v', "verbose")
@@ -84,7 +85,7 @@ class ParserSpecs extends Specification {
 
     "simple parameters can be interleaved with others" in {
       Parser.extractParameters(Array("-v", "/home/user/x.in", "--name", "test", "/home/user/x.out"), specMix) should beRight(
-        ("test", true, "/home/user/x.in", "/home/user/x.out")
+        ("test", true, new File("/home/user/x.in").toPath, new File("/home/user/x.out").toPath)
       )
     }
 
