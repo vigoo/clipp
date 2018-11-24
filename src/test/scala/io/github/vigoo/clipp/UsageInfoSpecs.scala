@@ -7,7 +7,7 @@ import io.github.vigoo.clipp.parsers._
 import io.github.vigoo.clipp.syntax._
 import io.github.vigoo.clipp.usageinfo.debug._
 import io.github.vigoo.clipp.usageinfo.UsageInfo._
-import io.github.vigoo.clipp.usageinfo.UsageInfoExtractor.MergedChoices
+import io.github.vigoo.clipp.usageinfo.UsageInfoExtractor.{Choice, MergedChoices}
 import io.github.vigoo.clipp.usageinfo.{UsageInfo, UsageInfoExtractor, UsagePrettyPrinter}
 import org.specs2.matcher.{MatchResult, Matcher}
 import org.specs2.mutable.Specification
@@ -52,7 +52,7 @@ class UsageInfoSpecs extends Specification {
       usageInfo should beSequenceOf(
         bePrintNodeOf(NamedParameter(Some('u'), Set("name", "username"), "name", "User name", implicitly[ParameterParser[String]])),
         bePrintNodeOf(Flag(Some('i'), Set("have-input"), "Switch for input")),
-        bePrintChoice(Map(Flag(Some('i'), Set("have-input"), "Switch for input") -> Set(true))),
+        bePrintChoice(Map(Flag(Some('i'), Set("have-input"), "Switch for input") -> Set(Choice(true, 1)))),
         beStartBranch,
         bePrintNodeOf(SimpleParameter("file", "Input file", implicitly[ParameterParser[File]])),
         beExitBranch,
@@ -84,7 +84,7 @@ class UsageInfoSpecs extends Specification {
         bePrintNodeOf(Flag(None, Set("is3d"), "Is 3D?")),
         bePrintNodeOf(NamedParameter(Some('x'), Set.empty, "value", "X", implicitly[ParameterParser[Double]])),
         bePrintNodeOf(NamedParameter(Some('y'), Set.empty, "value", "Y", implicitly[ParameterParser[Double]])),
-        bePrintChoice(Map(Flag(None, Set("is3d"), "Is 3D?") -> Set(true))),
+        bePrintChoice(Map(Flag(None, Set("is3d"), "Is 3D?") -> Set(Choice(true, 1)))),
         beStartBranch,
         bePrintNodeOf(NamedParameter(Some('z'), Set.empty, "value", "Z", implicitly[ParameterParser[Double]])),
         beExitBranch
@@ -119,16 +119,16 @@ class UsageInfoSpecs extends Specification {
 
       usageInfo should beSequenceOf(
         bePrintNodeOf(Command(List("a", "b", "c"))),
-        bePrintChoice(Map(Command(List("a", "b", "c")) -> Set("a"))),
+        bePrintChoice(Map(Command(List("a", "b", "c")) -> Set(Choice("a", 0)))),
         beStartBranch,
         bePrintNodeOf(NamedParameter(Some('x'), Set.empty, "value", "X", implicitly[ParameterParser[Double]])),
         beExitBranch,
-        bePrintChoice(Map(Command(List("a", "b", "c")) -> Set("b"))),
+        bePrintChoice(Map(Command(List("a", "b", "c")) -> Set(Choice("b", 1)))),
         beStartBranch,
         bePrintNodeOf(NamedParameter(None, Set("y1"), "value", "Y1", implicitly[ParameterParser[Double]])),
         bePrintNodeOf(NamedParameter(None, Set("y2"), "value", "Y2", implicitly[ParameterParser[Double]])),
         beExitBranch,
-        bePrintChoice(Map(Command(List("a", "b", "c")) -> Set("c"))),
+        bePrintChoice(Map(Command(List("a", "b", "c")) -> Set(Choice("c", 2)))),
         beStartBranch,
         bePrintNodeOf(NamedParameter(Some('z'), Set.empty, "value", "Z", implicitly[ParameterParser[Double]])),
         beExitBranch

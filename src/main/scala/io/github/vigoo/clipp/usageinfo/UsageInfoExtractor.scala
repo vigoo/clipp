@@ -20,7 +20,7 @@ object UsageInfoExtractor {
 
   case class PathEnd(uniqueId: UUID) extends GraphNode
 
-  type Choice = Any
+  case class Choice(value: Any, ordering: Int)
   type Choices = Map[Parameter[_], Choice]
   type MergedChoices = Map[Parameter[_], Set[Choice]]
   type ResultGraph = Graph[GraphNode, Choices]
@@ -73,7 +73,7 @@ object UsageInfoExtractor {
       } yield value
     }
 
-    private def record[T](parameter: Parameter[T], choice: T): UsageInfoM[Unit] =
+    private def record[T](parameter: Parameter[T], choice: T, ordering: Int): UsageInfoM[Unit] =
       for {
         state <- getState
         describedParameter = DescribedParameter(parameter, state.isInOptionalBlock)
@@ -83,7 +83,7 @@ object UsageInfoExtractor {
         }
         _ <- put[UsageInfoExtractor, ExtractUsageInfoState](state.copy(
           last = Some(describedParameter),
-          choices = state.choices + (parameter -> choice)
+          choices = state.choices + (parameter -> Choice(choice, ordering))
         ))
       } yield ()
 
@@ -104,26 +104,26 @@ object UsageInfoExtractor {
     def flag(flag: Flag): UsageInfoM[Boolean] = {
       for {
         enabled <- choice[Boolean](List(false, true))
-        _ <- record(flag, enabled)
+        _ <- record(flag, enabled, if (enabled) 1 else 0)
       } yield enabled
     }
 
     def namedParameter[T](namedParameter: NamedParameter[T], result: T): UsageInfoM[T] = {
       for {
-        _ <- record(namedParameter, result)
+        _ <- record(namedParameter, result, 0)
       } yield result
     }
 
     def simpleParameter[T](simpleParameter: SimpleParameter[T], result: T): UsageInfoM[T] = {
       for {
-        _ <- record(simpleParameter, result)
+        _ <- record(simpleParameter, result, 0)
       } yield result
     }
 
     def command(command: Command): UsageInfoM[String] = {
       for {
-        choice <- choice[String](command.validCommands.toList)
-        _ <- record(command, choice)
+        choice <- choice[String](command.validCommands)
+        _ <- record(command, choice, command.validCommands.indexOf(choice))
       } yield choice
     }
 

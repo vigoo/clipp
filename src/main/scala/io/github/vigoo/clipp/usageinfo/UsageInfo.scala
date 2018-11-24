@@ -74,7 +74,8 @@ object UsageInfo {
   }
 
   private def sortByChoices(a: TargetNode[GraphNode, Choices], b: TargetNode[GraphNode, Choices]): Boolean = {
-    false // TODO
+    a.labels.flatMap(_.values.map(_.ordering)).min <
+      b.labels.flatMap(_.values.map(_.ordering)).min
   }
 
   private def withoutSharedChoices(mergedChoices: Vector[MergedChoices]): Vector[MergedChoices] = {
