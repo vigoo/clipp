@@ -4,6 +4,7 @@ import java.io.File
 
 import io.github.vigoo.clipp.parsers._
 import io.github.vigoo.clipp.syntax._
+import io.github.vigoo.clipp.usageinfo.{UsageInfo, UsageInfoExtractor, UsagePrettyPrinter}
 
 object Playground {
 
@@ -53,8 +54,8 @@ object Playground {
       case Left(error) =>
         println(error)
 
-        val usageGraph = UsageInfo.getUsageDescription(paramSpec)
-        println(UsageInfo.prettyPrint(usageGraph))
+        val usageGraph = UsageInfoExtractor.getUsageDescription(paramSpec)
+        println(UsagePrettyPrinter.prettyPrint(usageGraph))
       case Right(result) =>
         println(result)
     }

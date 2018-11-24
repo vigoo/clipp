@@ -61,6 +61,7 @@ object Parser {
     }
   }
 
+  // TODO: in case of error, also return the fixed choices to be able to filter the usage info
   def extractParameters[T](from: Array[String], by: Free[Parameter, T]): EitherNel[ParserError, T] = {
     val initialState = ExtractParametersState(
       from.toVector.zipWithIndex.map { case (v, i) => PositionedParameter(i, v) },

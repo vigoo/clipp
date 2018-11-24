@@ -1,4 +1,4 @@
-package io.github.vigoo.clipp
+package io.github.vigoo.clipp.usageinfo
 
 import cats.Monoid
 

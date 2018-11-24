@@ -18,7 +18,7 @@ libraryDependencies ++= Seq(
 coverageEnabled in(Test, compile) := true
 coverageEnabled in(Compile, compile) := false
 
-scalacOptions ++= Seq("-Ypartial-unification", "-deprecation")
+scalacOptions ++= Seq("-Ypartial-unification", "-deprecation", "-feature")
 scalacOptions in Test ++= Seq("-Yrangepos")
 
 // Publishing
