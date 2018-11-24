@@ -1,5 +1,7 @@
 package io.github.vigoo.clipp.usageinfo
 
+import java.util.UUID
+
 import cats.data.{State, Writer}
 import cats.free.Free
 import cats.kernel.Monoid
@@ -11,14 +13,19 @@ import org.atnos.eff.all._
 import org.atnos.eff.syntax.all._
 
 object UsageInfoExtractor {
-  case class DescribedParameter(parameter: Parameter[_], isInOptionalBlock: Boolean)
+
+  sealed trait GraphNode
+
+  case class DescribedParameter(parameter: Parameter[_], isInOptionalBlock: Boolean) extends GraphNode
+
+  case class PathEnd(uniqueId: UUID) extends GraphNode
 
   type Choice = Any
   type Choices = Map[Parameter[_], Choice]
   type MergedChoices = Map[Parameter[_], Set[Choice]]
-  type ResultGraph = Graph[DescribedParameter, Choices]
+  type ResultGraph = Graph[GraphNode, Choices]
 
-  case class ExtractUsageInfoState(isInOptionalBlock: Boolean, last: Option[DescribedParameter], choices: Choices)
+  case class ExtractUsageInfoState(isInOptionalBlock: Boolean, last: Option[GraphNode], choices: Choices)
 
   private type UsageInfoExtractor = Fx.fx3[Choose, Writer[ResultGraph, ?], State[ExtractUsageInfoState, ?]]
   private type UsageInfoM[A] = Eff[UsageInfoExtractor, A]
@@ -81,14 +88,21 @@ object UsageInfoExtractor {
       } yield ()
 
     def reset(): UsageInfoM[Unit] =
-      modify[UsageInfoExtractor, ExtractUsageInfoState](_.copy(
-        last = None,
-        choices = Map.empty
-      ))
+      for {
+        state <- getState
+        stop = PathEnd(UUID.randomUUID())
+        _ <- state.last match {
+          case Some(last) => tell[UsageInfoExtractor, ResultGraph](Graph.edge(last, stop, state.choices))
+          case None => unit[UsageInfoExtractor]
+        }
+        _ <- put[UsageInfoExtractor, ExtractUsageInfoState](state.copy(
+          last = None,
+          choices = Map.empty
+        ))
+      } yield ()
 
     def flag(flag: Flag): UsageInfoM[Boolean] = {
       for {
-        state <- getState
         enabled <- choice[Boolean](List(false, true))
         _ <- record(flag, enabled)
       } yield enabled
@@ -96,21 +110,18 @@ object UsageInfoExtractor {
 
     def namedParameter[T](namedParameter: NamedParameter[T], result: T): UsageInfoM[T] = {
       for {
-        state <- getState
         _ <- record(namedParameter, result)
       } yield result
     }
 
     def simpleParameter[T](simpleParameter: SimpleParameter[T], result: T): UsageInfoM[T] = {
       for {
-        state <- getState
         _ <- record(simpleParameter, result)
       } yield result
     }
 
     def command(command: Command): UsageInfoM[String] = {
       for {
-        state <- getState
         choice <- choice[String](command.validCommands.toList)
         _ <- record(command, choice)
       } yield choice
@@ -132,4 +143,5 @@ object UsageInfoExtractor {
       }
     }
   }
+
 }

@@ -32,7 +32,7 @@ val paramSpec =
     } else {
       pure(None)
     }
-    commandName <- command(Set("cmd1", "cmd2"))
+    commandName <- command("cmd1", "cmd2")
     command <- commandName match {
       case "cmd1" =>
         for {

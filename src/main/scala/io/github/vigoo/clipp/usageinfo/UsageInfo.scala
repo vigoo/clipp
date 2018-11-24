@@ -7,7 +7,7 @@ object UsageInfo {
 
   sealed trait PrettyPrintCommand
 
-  case class PrintNode(node: Node[DescribedParameter, Choices]) extends PrettyPrintCommand
+  case class PrintNode(param: DescribedParameter) extends PrettyPrintCommand
 
   case class PrintChoice(choice: MergedChoices) extends PrettyPrintCommand
 
@@ -26,49 +26,55 @@ object UsageInfo {
     }
   }
 
-  def generateUsageInfo(node: Node[DescribedParameter, Choices]): Vector[PrettyPrintCommand] = {
+  def generateUsageInfo(node: Node[GraphNode, Choices]): Vector[PrettyPrintCommand] = {
+    node.value match {
+      case PathEnd(_) => Vector.empty
+      case describedParameter: DescribedParameter =>
+        val orderedTargetNodes: Vector[TargetNode[GraphNode, Choices]] = node.targetNodes.toVector.sortWith(sortByChoices)
+        val orderedMergedChoices = orderedTargetNodes.map(targetNode => mergeChoices(targetNode.labels))
+        val orderedFilteredChoices: Vector[MergedChoices] = withoutSharedChoices(orderedMergedChoices)
 
-    val orderedTargetNodes: Vector[TargetNode[DescribedParameter, Choices]] = node.targetNodes.toVector
-    val orderedMergedChoices = orderedTargetNodes.map(targetNode => mergeChoices(targetNode.labels))
-    val orderedFilteredChoices: Vector[MergedChoices] = withoutSharedChoices(orderedMergedChoices)
+        if (orderedTargetNodes.size > 1) {
+          // This is a branching point
 
-    if (orderedTargetNodes.size > 1) {
-      // This is a branching point
+          val branches = orderedTargetNodes.indices.toVector.map { idx =>
+            val to = orderedTargetNodes(idx).to
+            val choices = orderedFilteredChoices(idx)
 
-      val branches = orderedTargetNodes.indices.toVector.map { idx =>
-        val to = orderedTargetNodes(idx).to
-        val choices = orderedFilteredChoices(idx)
+            (generateUsageInfo(to), choices)
+          }
 
-        (generateUsageInfo(to), choices)
-      }
+          val shortestLength = branches.map { case (branch, _) => branch.length }.min
+          val dropCount = (0 until shortestLength).dropWhile { idx =>
+            branches.map { case (branch, _) => branch(branch.length - idx - 1) }.distinct.length == 1
+          }.headOption.getOrElse(shortestLength)
 
-      // TODO: reduce branches by dropping from right the common elements
-      val shortestLength = branches.map { case (branch, _) => branch.length }.min
-      val dropCount = (0 until shortestLength).dropWhile { idx =>
-        branches.map { case (branch, _) => branch(branch.length - idx - 1) }.distinct.length == 1
-      }.headOption.getOrElse(shortestLength)
+          val reducedBranches = branches
+            .map { case (branch, choices) => branch.dropRight(dropCount) -> choices }
+            .filter { case (branch, _) => branch.nonEmpty }
 
-      val reducedBranches = branches
-        .map { case (branch, choices) => branch.dropRight(dropCount) -> choices }
-        .filter { case (branch, _) => branch.nonEmpty }
+          val commonTail = branches.head._1.takeRight(dropCount)
 
-      val commonTail = branches.head._1.takeRight(dropCount)
+          val allBranches = reducedBranches.map { case (branch, choices) =>
+            PrintChoice(choices) +: StartBranch +: branch :+ ExitBranch
+          }
 
-      val allBranches = reducedBranches.map { case (branch, choices) =>
-        PrintChoice(choices) +: StartBranch +: branch :+ ExitBranch
-      }
-
-      PrintNode(node) +: (allBranches.flatten ++ commonTail)
-    } else {
-      // No branching, go to next
-      orderedTargetNodes.headOption match {
-        case Some(next) =>
-          val nextNode = next.to
-          PrintNode(node) +: generateUsageInfo(nextNode)
-        case None =>
-          Vector(PrintNode(node))
-      }
+          PrintNode(describedParameter) +: (allBranches.flatten ++ commonTail)
+        } else {
+          // No branching, go to next
+          orderedTargetNodes.headOption match {
+            case Some(next) =>
+              val nextNode = next.to
+              PrintNode(describedParameter) +: generateUsageInfo(nextNode)
+            case None =>
+              Vector(PrintNode(describedParameter))
+          }
+        }
     }
+  }
+
+  private def sortByChoices(a: TargetNode[GraphNode, Choices], b: TargetNode[GraphNode, Choices]): Boolean = {
+    false // TODO
   }
 
   private def withoutSharedChoices(mergedChoices: Vector[MergedChoices]): Vector[MergedChoices] = {

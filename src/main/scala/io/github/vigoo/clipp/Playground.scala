@@ -4,7 +4,7 @@ import java.io.File
 
 import io.github.vigoo.clipp.parsers._
 import io.github.vigoo.clipp.syntax._
-import io.github.vigoo.clipp.usageinfo.{UsageInfo, UsageInfoExtractor, UsagePrettyPrinter}
+import io.github.vigoo.clipp.usageinfo.{UsageInfoExtractor, UsagePrettyPrinter}
 
 object Playground {
 
@@ -31,7 +31,7 @@ object Playground {
         } else {
           pure(None)
         }
-        commandName <- command(Set("cmd1", "cmd2"))
+        commandName <- command("cmd1", "cmd2")
         command <- commandName match {
           case "cmd1" =>
             for {

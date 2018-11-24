@@ -76,21 +76,21 @@ object UsagePrettyPrinter {
   private def prettyPrint(cmds: List[PrettyPrintCommand], level: Int, builder: StringBuilder): String =
     cmds match {
       case Nil => builder.toString
-      case PrintNode(node) :: remaining =>
-        node.value.parameter match {
+      case PrintNode(param) :: remaining =>
+        param.parameter match {
           case Flag(shortName, longNames, description) =>
             val allOptions = shortName.map("-" + _).toList ::: longNames.map("--" + _).toList
-            prettyPrintOptionsAndDesc(level, allOptions.mkString(", "), description, node.value.isInOptionalBlock, builder)
+            prettyPrintOptionsAndDesc(level, allOptions.mkString(", "), description, param.isInOptionalBlock, builder)
 
           case NamedParameter(shortName, longNames, placeholder, description, _) =>
             val allOptions = shortName.map(c => s"-$c <$placeholder>").toList ::: longNames.map(n => s"--$n <$placeholder>").toList
-            prettyPrintOptionsAndDesc(level, allOptions.mkString(", "), description, node.value.isInOptionalBlock, builder)
+            prettyPrintOptionsAndDesc(level, allOptions.mkString(", "), description, param.isInOptionalBlock, builder)
 
           case SimpleParameter(placeholder, description, _) =>
-            prettyPrintOptionsAndDesc(level, s"<$placeholder>", description, node.value.isInOptionalBlock, builder)
+            prettyPrintOptionsAndDesc(level, s"<$placeholder>", description, param.isInOptionalBlock, builder)
 
           case Command(validCommands) =>
-            prettyPrintOptionsAndDesc(level, s"<command>", s"One of ${validCommands.mkString(", ")}", node.value.isInOptionalBlock, builder)
+            prettyPrintOptionsAndDesc(level, s"<command>", s"One of ${validCommands.mkString(", ")}", param.isInOptionalBlock, builder)
 
           case Optional(parameter) =>
             throw new IllegalStateException(s"Optionals should have been prefiltered")

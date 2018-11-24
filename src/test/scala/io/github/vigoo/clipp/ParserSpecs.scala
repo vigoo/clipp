@@ -32,7 +32,7 @@ class ParserSpecs extends Specification {
 
   private val specCommand = for {
     verbose <- flag("Verbosity", 'v', "verbose")
-    cmd <- command(Set("first", "second"))
+    cmd <- command("first", "second")
     result <- {
       val r: Free[Parameter, Either[(String, String), Boolean]] =
         cmd match {
@@ -159,7 +159,7 @@ class ParserSpecs extends Specification {
 
     "refuse invalid command" in {
       Parser.extractParameters(Array("third", "--name", "test", "--password", "xxx"), specCommand) should beLeft(
-        NonEmptyList(InvalidCommand("third", Set("first", "second")), List.empty)
+        NonEmptyList(InvalidCommand("third", List("first", "second")), List.empty)
       )
     }
 
@@ -173,11 +173,11 @@ class ParserSpecs extends Specification {
       val spec = for {
         b <- flag("Switches a parameter", 'b')
         p <- if (b) parameter[String]("parameter", "value") else Free.pure[Parameter, String]("not specified")
-        cmd <- command(Set("first"))
+        cmd <- command("first")
       } yield cmd
 
       Parser.extractParameters(Array("param", "first", "-b"), spec) should beLeft(
-        NonEmptyList(CommandPositionIsNotStatic(Set("first")), List.empty)
+        NonEmptyList(CommandPositionIsNotStatic(List("first")), List.empty)
       )
     }
   }

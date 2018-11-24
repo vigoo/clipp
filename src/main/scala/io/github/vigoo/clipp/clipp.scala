@@ -42,7 +42,7 @@ case class SimpleParameter[T](placeholder: String,
   override def toString: String = s"simple parameter $placeholder ($description)"
 }
 
-case class Command(validCommands: Set[String])
+case class Command(validCommands: List[String])
   extends Parameter[String] {
 
   override def toString: String = s"command ($validCommands)"
@@ -60,10 +60,10 @@ case class UnknownParameter(parameter: String) extends ParserError
 case class MissingNamedParameter(variants: Set[String]) extends ParserError
 case class MissingValueForNamedParameter(parameter: String) extends ParserError
 case class MissingSimpleParameter(placeholder: String) extends ParserError
-case class MissingCommand(validCommands: Set[String]) extends ParserError
-case class InvalidCommand(command: String, validCommands: Set[String]) extends ParserError
+case class MissingCommand(validCommands: List[String]) extends ParserError
+case class InvalidCommand(command: String, validCommands: List[String]) extends ParserError
 case class FailedToParseValue(message: String, value: String) extends ParserError
-case class CommandPositionIsNotStatic(validCommands: Set[String]) extends ParserError
+case class CommandPositionIsNotStatic(validCommands: List[String]) extends ParserError
 
 
 object parsers {
@@ -120,8 +120,8 @@ object syntax {
                                     placeholder: String): Free[Parameter, T] =
     liftF(SimpleParameter(placeholder, description, implicitly))
 
-  def command(validValues: Set[String]): Free[Parameter, String] =
-    liftF(Command(validValues))
+  def command(validValues: String*): Free[Parameter, String] =
+    liftF(Command(validValues.toList))
 
   def optional[T](parameter: Free[Parameter, T]): Free[Parameter, Option[T]] =
     liftF[Parameter, Option[T]](Optional(parameter))
