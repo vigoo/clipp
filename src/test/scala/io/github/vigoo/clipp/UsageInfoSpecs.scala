@@ -34,6 +34,31 @@ class UsageInfoSpecs extends Specification {
       )
     }
 
+    "be a sequence of prints for linear case with optional blocks" in {
+      val spec = for {
+        name <- optional { namedParameter[String]("User name", "name", 'u', "name", "username") }
+        verbose <- flag("Verbosity", 'v', "verbose")
+        maybeIo <- optional {
+          for {
+            i <- parameter[File]("Input file", "file")
+            o <- parameter[File]("Output file", "file")
+          } yield (i, o)
+        }
+      } yield (name, verbose, maybeIo)
+
+      val graph = UsageInfoExtractor.getUsageDescription(spec)
+      val usageInfo = UsageInfo.generateUsageInfo(graph)
+      println(UsagePrettyPrinter.prettyPrint(graph))
+
+      usageInfo should beSequenceOf(
+        beOptionalPrintNodeOf(NamedParameter(Some('u'), Set("name", "username"), "name", "User name", implicitly[ParameterParser[String]])),
+        bePrintNodeOf(Flag(Some('v'), Set("verbose"), "Verbosity")),
+        beOptionalPrintNodeOf(SimpleParameter("file", "Input file", implicitly[ParameterParser[File]])),
+        beOptionalPrintNodeOf(SimpleParameter("file", "Output file", implicitly[ParameterParser[File]]))
+      )
+    }
+
+
     "correctly print a single, flag-dependent option" in {
       val spec = for {
         name <- namedParameter[String]("User name", "name", 'u', "name", "username")
@@ -200,9 +225,18 @@ class UsageInfoSpecs extends Specification {
   private def bePrintNodeOf[T](parameter: Parameter[T]): Matcher[PrettyPrintCommand] = (cmd: PrettyPrintCommand) => {
     cmd match {
       case PrintNode(param) =>
-        param.parameter should beEqualTo(parameter)
+        param.parameter should beEqualTo(parameter) and (param.isInOptionalBlock should beFalse)
       case command =>
         ko(s"Command needs to be PrintNode but it is $command")
+    }
+  }
+
+  private def beOptionalPrintNodeOf[T](parameter: Parameter[T]): Matcher[PrettyPrintCommand] = (cmd: PrettyPrintCommand) => {
+    cmd match {
+      case PrintNode(param) =>
+        param.parameter should beEqualTo(parameter) and (param.isInOptionalBlock should beTrue)
+      case command =>
+        ko(s"Command needs to be an optional PrintNode but it is $command")
     }
   }
 
