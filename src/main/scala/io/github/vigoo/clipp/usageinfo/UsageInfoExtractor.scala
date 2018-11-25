@@ -27,7 +27,7 @@ object UsageInfoExtractor {
   object Choice {
     implicit val ordering: Ordering[Choice] = (x: Choice, y: Choice) => {
       (x, y) match {
-        case (BooleanChoice(v1), BooleanChoice(v2)) => (if (v1) 1 else 0) - (if (v2) 1 else 0)
+        case (BooleanChoice(v1), BooleanChoice(v2)) => (if (v1) -1 else -2) - (if (v2) -1 else -2)
         case (c1: CommandChoice, c2: CommandChoice) => c1.valueIndex - c2.valueIndex
         case (_, _) => 0
 
@@ -43,15 +43,20 @@ object UsageInfoExtractor {
         case _ => false
       }
     }
+
+    def participatesInOrdering(choice: Choice): Boolean = choice match {
+      case CommandChoice(_, _) => true
+      case _ => false
+    }
   }
 
-  case class BooleanChoice(value: Boolean) extends Choice
+  final case class BooleanChoice(value: Boolean) extends Choice
 
-  case class CommandChoice(value: String, validValues: List[String]) extends Choice {
+  final case class CommandChoice(value: String, validValues: List[String]) extends Choice {
     val valueIndex: Int = validValues.indexOf(value)
   }
 
-  case class ArbitraryChoice(value: Any) extends Choice
+  final case class ArbitraryChoice(value: Any) extends Choice
 
   type Choices = Map[Parameter[_], Choice]
   type MergedChoices = Map[Parameter[_], Set[Choice]]
@@ -142,26 +147,28 @@ object UsageInfoExtractor {
 
     def flag(flag: Flag): UsageInfoM[Boolean] = {
       for {
-        enabled <- choice[Boolean](List(false, true))
+        enabled <- choice[Boolean](flag.explicitChoices.getOrElse(List(false, true)))
         _ <- record(flag, BooleanChoice(enabled))
       } yield enabled
     }
 
     def namedParameter[T](namedParameter: NamedParameter[T], result: T): UsageInfoM[T] = {
       for {
-        _ <- record(namedParameter, ArbitraryChoice(result))
+        value <- choice[T](namedParameter.explicitChoices.getOrElse(List(result)))
+        _ <- record(namedParameter, ArbitraryChoice(value))
       } yield result
     }
 
     def simpleParameter[T](simpleParameter: SimpleParameter[T], result: T): UsageInfoM[T] = {
       for {
-        _ <- record(simpleParameter, ArbitraryChoice(result))
+        value <- choice[T](simpleParameter.explicitChoices.getOrElse(List(result)))
+        _ <- record(simpleParameter, ArbitraryChoice(value))
       } yield result
     }
 
     def command(command: Command): UsageInfoM[String] = {
       for {
-        choice <- choice[String](command.validCommands)
+        choice <- choice[String](command.explicitChoices.getOrElse(command.validCommands))
         _ <- record(command, CommandChoice(choice, command.validCommands))
       } yield choice
     }

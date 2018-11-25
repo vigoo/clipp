@@ -27,10 +27,10 @@ class UsageInfoSpecs extends Specification {
       val usageInfo = UsageInfo.generateUsageInfo(graph)
 
       usageInfo should beSequenceOf(
-        bePrintNodeOf(NamedParameter(Some('u'), Set("name", "username"), "name", "User name", implicitly[ParameterParser[String]])),
-        bePrintNodeOf(Flag(Some('v'), Set("verbose"), "Verbosity")),
-        bePrintNodeOf(SimpleParameter("file", "Input file", implicitly[ParameterParser[File]])),
-        bePrintNodeOf(SimpleParameter("file", "Output file", implicitly[ParameterParser[File]]))
+        bePrintNodeOf(NamedParameter(Some('u'), Set("name", "username"), "name", "User name", None, implicitly[ParameterParser[String]])),
+        bePrintNodeOf(Flag(Some('v'), Set("verbose"), "Verbosity", None)),
+        bePrintNodeOf(SimpleParameter("file", "Input file", None, implicitly[ParameterParser[File]])),
+        bePrintNodeOf(SimpleParameter("file", "Output file", None, implicitly[ParameterParser[File]]))
       )
     }
 
@@ -48,13 +48,12 @@ class UsageInfoSpecs extends Specification {
 
       val graph = UsageInfoExtractor.getUsageDescription(spec)
       val usageInfo = UsageInfo.generateUsageInfo(graph)
-      println(UsagePrettyPrinter.prettyPrint(graph))
 
       usageInfo should beSequenceOf(
-        beOptionalPrintNodeOf(NamedParameter(Some('u'), Set("name", "username"), "name", "User name", implicitly[ParameterParser[String]])),
-        bePrintNodeOf(Flag(Some('v'), Set("verbose"), "Verbosity")),
-        beOptionalPrintNodeOf(SimpleParameter("file", "Input file", implicitly[ParameterParser[File]])),
-        beOptionalPrintNodeOf(SimpleParameter("file", "Output file", implicitly[ParameterParser[File]]))
+        beOptionalPrintNodeOf(NamedParameter(Some('u'), Set("name", "username"), "name", "User name", None, implicitly[ParameterParser[String]])),
+        bePrintNodeOf(Flag(Some('v'), Set("verbose"), "Verbosity", None)),
+        beOptionalPrintNodeOf(SimpleParameter("file", "Input file", None, implicitly[ParameterParser[File]])),
+        beOptionalPrintNodeOf(SimpleParameter("file", "Output file", None, implicitly[ParameterParser[File]]))
       )
     }
 
@@ -75,13 +74,13 @@ class UsageInfoSpecs extends Specification {
       val usageInfo = UsageInfo.generateUsageInfo(graph)
 
       usageInfo should beSequenceOf(
-        bePrintNodeOf(NamedParameter(Some('u'), Set("name", "username"), "name", "User name", implicitly[ParameterParser[String]])),
-        bePrintNodeOf(Flag(Some('i'), Set("have-input"), "Switch for input")),
-        bePrintChoice(Map(Flag(Some('i'), Set("have-input"), "Switch for input") -> Set(BooleanChoice(true)))),
+        bePrintNodeOf(NamedParameter(Some('u'), Set("name", "username"), "name", "User name", None, implicitly[ParameterParser[String]])),
+        bePrintNodeOf(Flag(Some('i'), Set("have-input"), "Switch for input", None)),
+        bePrintChoice(Map(Flag(Some('i'), Set("have-input"), "Switch for input", None) -> Set(BooleanChoice(true)))),
         beStartBranch,
-        bePrintNodeOf(SimpleParameter("file", "Input file", implicitly[ParameterParser[File]])),
+        bePrintNodeOf(SimpleParameter("file", "Input file", None, implicitly[ParameterParser[File]])),
         beExitBranch,
-        bePrintNodeOf(SimpleParameter("file", "Output file", implicitly[ParameterParser[File]]))
+        bePrintNodeOf(SimpleParameter("file", "Output file", None, implicitly[ParameterParser[File]]))
       )
     }
 
@@ -106,12 +105,12 @@ class UsageInfoSpecs extends Specification {
       val usageInfo = UsageInfo.generateUsageInfo(graph)
 
       usageInfo should beSequenceOf(
-        bePrintNodeOf(Flag(None, Set("is3d"), "Is 3D?")),
-        bePrintNodeOf(NamedParameter(Some('x'), Set.empty, "value", "X", implicitly[ParameterParser[Double]])),
-        bePrintNodeOf(NamedParameter(Some('y'), Set.empty, "value", "Y", implicitly[ParameterParser[Double]])),
-        bePrintChoice(Map(Flag(None, Set("is3d"), "Is 3D?") -> Set(BooleanChoice(true)))),
+        bePrintNodeOf(Flag(None, Set("is3d"), "Is 3D?", None)),
+        bePrintNodeOf(NamedParameter(Some('x'), Set.empty, "value", "X", None, implicitly[ParameterParser[Double]])),
+        bePrintNodeOf(NamedParameter(Some('y'), Set.empty, "value", "Y", None, implicitly[ParameterParser[Double]])),
+        bePrintChoice(Map(Flag(None, Set("is3d"), "Is 3D?", None) -> Set(BooleanChoice(true)))),
         beStartBranch,
-        bePrintNodeOf(NamedParameter(Some('z'), Set.empty, "value", "Z", implicitly[ParameterParser[Double]])),
+        bePrintNodeOf(NamedParameter(Some('z'), Set.empty, "value", "Z", None, implicitly[ParameterParser[Double]])),
         beExitBranch
       )
     }
@@ -140,19 +139,19 @@ class UsageInfoSpecs extends Specification {
       val usageInfo = UsageInfo.generateUsageInfo(graph)
 
       usageInfo should beSequenceOf(
-        bePrintNodeOf(Command(List("a", "b", "c"))),
-        bePrintChoice(Map(Command(List("a", "b", "c")) -> Set(CommandChoice("a", List("a", "b", "c"))))),
+        bePrintNodeOf(Command(List("a", "b", "c"), None)),
+        bePrintChoice(Map(Command(List("a", "b", "c"), None) -> Set(CommandChoice("a", List("a", "b", "c"))))),
         beStartBranch,
-        bePrintNodeOf(NamedParameter(Some('x'), Set.empty, "value", "X", implicitly[ParameterParser[Double]])),
+        bePrintNodeOf(NamedParameter(Some('x'), Set.empty, "value", "X", None, implicitly[ParameterParser[Double]])),
         beExitBranch,
-        bePrintChoice(Map(Command(List("a", "b", "c")) -> Set(CommandChoice("b", List("a", "b", "c"))))),
+        bePrintChoice(Map(Command(List("a", "b", "c"), None) -> Set(CommandChoice("b", List("a", "b", "c"))))),
         beStartBranch,
-        bePrintNodeOf(NamedParameter(None, Set("y1"), "value", "Y1", implicitly[ParameterParser[Double]])),
-        bePrintNodeOf(NamedParameter(None, Set("y2"), "value", "Y2", implicitly[ParameterParser[Double]])),
+        bePrintNodeOf(NamedParameter(None, Set("y1"), "value", "Y1", None, implicitly[ParameterParser[Double]])),
+        bePrintNodeOf(NamedParameter(None, Set("y2"), "value", "Y2", None, implicitly[ParameterParser[Double]])),
         beExitBranch,
-        bePrintChoice(Map(Command(List("a", "b", "c")) -> Set(CommandChoice("c", List("a", "b", "c"))))),
+        bePrintChoice(Map(Command(List("a", "b", "c"), None) -> Set(CommandChoice("c", List("a", "b", "c"))))),
         beStartBranch,
-        bePrintNodeOf(NamedParameter(Some('z'), Set.empty, "value", "Z", implicitly[ParameterParser[Double]])),
+        bePrintNodeOf(NamedParameter(Some('z'), Set.empty, "value", "Z", None, implicitly[ParameterParser[Double]])),
         beExitBranch
       )
     }
@@ -180,25 +179,26 @@ class UsageInfoSpecs extends Specification {
 
       val graph = UsageInfoExtractor.getUsageDescription(spec)
       val usageInfo = UsageInfo.generateUsageInfo(graph)
+      println(UsagePrettyPrinter.prettyPrint(graph))
 
       usageInfo should beSequenceOf(
-        bePrintNodeOf(Flag(Some('v'), Set.empty, "Verbose")),
-        bePrintNodeOf(Command(List("a", "b", "c"))),
-        bePrintChoice(Map(Command(List("a", "b", "c")) -> Set(
+        bePrintNodeOf(Flag(Some('v'), Set.empty, "Verbose", None)),
+        bePrintNodeOf(Command(List("a", "b", "c"), None)),
+        bePrintChoice(Map(Command(List("a", "b", "c"), None) -> Set(
           CommandChoice("a", List("a", "b", "c")),
           CommandChoice("c", List("a", "b", "c"))
         ))),
         beStartBranch,
-        bePrintNodeOf(NamedParameter(Some('x'), Set.empty, "value", "X", implicitly[ParameterParser[Double]])),
-        bePrintNodeOf(NamedParameter(Some('y'), Set.empty, "value", "Y", implicitly[ParameterParser[Double]])),
-        bePrintChoice(Map(Command(List("a", "b", "c")) -> Set(CommandChoice("c", List("a", "b", "c"))))),
+        bePrintNodeOf(NamedParameter(Some('x'), Set.empty, "value", "X", None, implicitly[ParameterParser[Double]])),
+        bePrintNodeOf(NamedParameter(Some('y'), Set.empty, "value", "Y", None, implicitly[ParameterParser[Double]])),
+        bePrintChoice(Map(Command(List("a", "b", "c"), None) -> Set(CommandChoice("c", List("a", "b", "c"))))),
         beStartBranch,
-        bePrintNodeOf(NamedParameter(Some('z'), Set.empty, "value", "Z", implicitly[ParameterParser[Double]])),
+        bePrintNodeOf(NamedParameter(Some('z'), Set.empty, "value", "Z", None, implicitly[ParameterParser[Double]])),
         beExitBranch,
         beExitBranch,
-        bePrintChoice(Map(Command(List("a", "b", "c")) -> Set(CommandChoice("b", List("a", "b", "c"))))),
+        bePrintChoice(Map(Command(List("a", "b", "c"), None) -> Set(CommandChoice("b", List("a", "b", "c"))))),
         beStartBranch,
-        bePrintNodeOf(SimpleParameter("name", "Name", implicitly[ParameterParser[String]])),
+        bePrintNodeOf(SimpleParameter("name", "Name", None, implicitly[ParameterParser[String]])),
         beExitBranch,
       )
     }

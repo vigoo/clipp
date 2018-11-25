@@ -20,7 +20,8 @@ sealed trait Parameter[T]
 
 case class Flag(shortName: Option[Char],
                 longNames: Set[String],
-                description: String)
+                description: String,
+                explicitChoices: Option[List[Boolean]])
   extends Parameter[Boolean] {
 
   override def toString: String = s"flag $shortName $longNames"
@@ -30,6 +31,7 @@ case class NamedParameter[T](shortName: Option[Char],
                              longNames: Set[String],
                              placeholder: String,
                              description: String,
+                             explicitChoices: Option[List[T]],
                              parameterParser: ParameterParser[T])
   extends Parameter[T] {
 
@@ -38,13 +40,15 @@ case class NamedParameter[T](shortName: Option[Char],
 
 case class SimpleParameter[T](placeholder: String,
                               description: String,
+                              explicitChoices: Option[List[T]],
                               parameterParser: ParameterParser[T])
   extends Parameter[T] {
 
   override def toString: String = s"simple parameter $placeholder ($description)"
 }
 
-case class Command(validCommands: List[String])
+case class Command(validCommands: List[String],
+                   explicitChoices: Option[List[String]])
   extends Parameter[String] {
 
   override def toString: String = s"command ($validCommands)"
@@ -105,31 +109,58 @@ object syntax {
 
   def flag(description: String,
            shortName: Char, longNames: String*): Free[Parameter, Boolean] =
-    liftF(Flag(Some(shortName), longNames.toSet, description))
+    liftF(Flag(Some(shortName), longNames.toSet, description, None))
 
   def flag(description: String,
            longName: String,
            otherLongNames: String*): Free[Parameter, Boolean] =
-    liftF(Flag(None, otherLongNames.toSet + longName, description))
+    liftF(Flag(None, otherLongNames.toSet + longName, description, None))
+
+  def flag(description: String,
+           shortName: Char, longNames: List[String],
+           withDocumentedChoices: List[Boolean]): Free[Parameter, Boolean] =
+    liftF(Flag(Some(shortName), longNames.toSet, description, Some(withDocumentedChoices)))
 
   def namedParameter[T: ParameterParser](description: String,
                                          placeholder: String,
                                          shortName: Char,
                                          longNames: String*): Free[Parameter, T] =
-    liftF(NamedParameter(Some(shortName), longNames.toSet, placeholder, description, implicitly))
+    liftF(NamedParameter(Some(shortName), longNames.toSet, placeholder, description, None, implicitly))
+
+  def namedParameter[T: ParameterParser](description: String,
+                                         placeholder: String,
+                                         shortName: Char,
+                                         longNames: List[String],
+                                         withDocumentedChoices: List[T]): Free[Parameter, T] =
+    liftF(NamedParameter(Some(shortName), longNames.toSet, placeholder, description, Some(withDocumentedChoices), implicitly))
 
   def namedParameter[T: ParameterParser](description: String,
                                          placeholder: String,
                                          longName: String,
                                          otherLongNames: String*): Free[Parameter, T] =
-    liftF(NamedParameter(None, otherLongNames.toSet + longName, placeholder, description, implicitly))
+    liftF(NamedParameter(None, otherLongNames.toSet + longName, placeholder, description, None, implicitly))
+
+  def namedParameter[T: ParameterParser](description: String,
+                                         placeholder: String,
+                                         longName: String,
+                                         otherLongNames: List[String],
+                                         withDocumentedChoices: List[T]): Free[Parameter, T] =
+    liftF(NamedParameter(None, otherLongNames.toSet + longName, placeholder, description, Some(withDocumentedChoices), implicitly))
 
   def parameter[T: ParameterParser](description: String,
                                     placeholder: String): Free[Parameter, T] =
-    liftF(SimpleParameter(placeholder, description, implicitly))
+    liftF(SimpleParameter(placeholder, description, None, implicitly))
+
+  def parameter[T: ParameterParser](description: String,
+                                    placeholder: String,
+                                    withDocumentedChoices: List[T]): Free[Parameter, T] =
+    liftF(SimpleParameter(placeholder, description, Some(withDocumentedChoices), implicitly))
 
   def command(validValues: String*): Free[Parameter, String] =
-    liftF(Command(validValues.toList))
+    liftF(Command(validValues.toList, None))
+
+  def command(validValues: List[String], withDocumentedChoices: List[String]): Free[Parameter, String] =
+    liftF(Command(validValues, Some(withDocumentedChoices)))
 
   def optional[T](parameter: Free[Parameter, T]): Free[Parameter, Option[T]] =
     liftF[Parameter, Option[T]](Optional(parameter))

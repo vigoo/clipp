@@ -74,10 +74,19 @@ object UsageInfo {
   }
 
   private def sortByChoices(a: TargetNode[GraphNode, Choices], b: TargetNode[GraphNode, Choices]): Boolean = {
-    implicitly[Ordering[Choice]].lt(
-      a.labels.flatMap(_.values).toList.min,
-      b.labels.flatMap(_.values).toList.min
-    )
+    val aList = a.labels.flatMap(_.values).filter(Choice.participatesInOrdering).toList
+    val bList = b.labels.flatMap(_.values).filter(Choice.participatesInOrdering).toList
+
+    if (aList.isEmpty) {
+      true
+    } else if (bList.isEmpty) {
+      false
+    } else {
+      implicitly[Ordering[Choice]].lt(
+        aList.min,
+        bList.min
+      )
+    }
   }
 
   private def withoutTotalChoices(mergedChoices: MergedChoices): MergedChoices = {

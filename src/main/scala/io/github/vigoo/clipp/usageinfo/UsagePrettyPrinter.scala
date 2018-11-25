@@ -2,7 +2,7 @@ package io.github.vigoo.clipp.usageinfo
 
 import io.github.vigoo.clipp._
 import io.github.vigoo.clipp.usageinfo.UsageInfo._
-import io.github.vigoo.clipp.usageinfo.UsageInfoExtractor.{DescribedParameter, ResultGraph, UsageDescription}
+import io.github.vigoo.clipp.usageinfo.UsageInfoExtractor.{DescribedParameter, UsageDescription}
 
 import scala.annotation.tailrec
 import scala.collection.mutable
@@ -14,15 +14,18 @@ object UsagePrettyPrinter {
       case Left(failure) =>
         failure
       case Right(commands) =>
-        val commandList = commands.toList
-        val builder = mutable.StringBuilder.newBuilder
-
-        usageDescription.metadata.foreach { metadata =>
-          prettyPrintUsage(metadata, commandList, builder)
-          prettyPrintDescription(metadata, builder)
-        }
-        prettyPrint(commandList, 1, builder)
+        prettyPrint(commands.toList, usageDescription.metadata)
     }
+  }
+
+  def prettyPrint(commandList: List[PrettyPrintCommand], optionalMetadata: Option[ParameterParserMetadata]): String = {
+    val builder = mutable.StringBuilder.newBuilder
+
+    optionalMetadata.foreach { metadata =>
+      prettyPrintUsage(metadata, commandList, builder)
+      prettyPrintDescription(metadata, builder)
+    }
+    prettyPrint(commandList, 1, builder)
   }
 
   private val descriptionX = 40 // TODO: make this configurable

@@ -69,4 +69,80 @@ The level of freedom the specification monad gives makes it hard to automaticall
 but the library tries to implement a heuristics that is good in many common cases and also lets you 
 customize it on multiple levels.
 
-TODO: document this 
+
+### Auto mode
+
+Let's see a silly example of a more complex parser to see how it works:
+```scala
+  val spec = for {
+    _ <- metadata(programName = "example", description = "An example created to show usage info support")
+    withAge <- flag("With age", 'a')
+    cmd <- command("a", "b", "c")
+    result <- cmd match {
+      case "a" =>
+        for {
+          x <- namedParameter[Double]("X", "value", 'x')
+          y <- namedParameter[Double]("Y", "value", 'y')
+        } yield 0
+      case "b" =>
+        for {
+          name <- parameter[String] ("Name", "name")
+          age <- if (withAge) { parameter[Int]("Age", placeholder = "age in years") } else { pure(0) }
+        } yield 1
+      case "c" =>
+        for {
+          x <- namedParameter[Double]("X", "value", 'x')
+          y <- namedParameter[Double]("Y", "value", 'y')
+          z <- namedParameter[Double]("Z", "value", 'z')
+        } yield 2
+    }
+  } yield result
+```
+
+The output will be:
+```plain
+Usage: example [-a] [command] ...
+
+An example created to show usage info support
+  -a                                    With age
+  <command>                             One of a, b, c
+
+  When command is one of a, c:
+    -x <value>                          X
+    -y <value>                          Y
+
+    When command is c:
+      -z <value>                        Z
+
+    When command is b:
+      <name>                            Name
+
+      When -a is true:
+        <age in years>                  Age
+```
+
+The *usage info generator* executes the parser with multiple, automatically generated choices
+in order to figure out the execution graph. Currently it only generates choices for:
+
+- flags, trying *both true and false*
+- commands, trying *all the valid commands*
+
+### Customizing choices
+
+All the syntax functions have variants with `withExplicitChoices = List[T]` parameters which turns
+off the automatic branching and uses the given list of values to generate the usage info graph. By
+providing a single value, the choice can be locked to a fix value.
+
+### Manual mode
+
+In very complex cases the pretty printer part of the library can be still used to display
+customized information. In this case a custom list of `PrettyPrintCommand`s and an optional
+`ParameterParserMetadata` can be provided to the `UsagePrettyPrinter`.
+
+### Partially locked choices
+In case of showing the usage info by reacting to bad user input, it is possible to use the state of the
+parser up until the error to lock the *choices* to specific values. This has the same effect as
+locking them to a particular value statically with the `withExplicitChoices = List(x)` syntax.
+
+This can be used to display only relevant parts of the usage info, for example in sub-command
+style cases.
