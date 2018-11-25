@@ -23,6 +23,7 @@ object Playground {
   def main(args: Array[String]): Unit = {
     val paramSpec =
       for {
+        _ <- metadata(programName = "playground", description = "Testing some features of the new CLI parameter parser")
         verbose <- flag("Verbose output", 'v', "verbose")
         input <- parameter[File]("Input file's path", "file")
         output <- optional { parameter[File]("Output file's path", "file") }

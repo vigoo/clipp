@@ -13,6 +13,8 @@ trait ParameterParser[T] {
   def default: T
 }
 
+case class ParameterParserMetadata(programName: String, description: Option[String])
+
 
 sealed trait Parameter[T]
 
@@ -52,6 +54,12 @@ case class Optional[T](parameter: Free[Parameter, T])
   extends Parameter[Option[T]] {
 
   override def toString: String = s"optional $parameter"
+}
+
+case class SetMetadata(metadata: ParameterParserMetadata)
+  extends Parameter[Unit] {
+
+  override def toString: String = s"set metadata"
 }
 
 
@@ -125,6 +133,12 @@ object syntax {
 
   def optional[T](parameter: Free[Parameter, T]): Free[Parameter, Option[T]] =
     liftF[Parameter, Option[T]](Optional(parameter))
+
+  def metadata(programName: String): Free[Parameter, Unit] =
+    liftF[Parameter, Unit](SetMetadata(ParameterParserMetadata(programName, None)))
+
+  def metadata(programName: String, description: String): Free[Parameter, Unit] =
+    liftF[Parameter, Unit](SetMetadata(ParameterParserMetadata(programName, Some(description))))
 
   def pure[T](value: T): Free[Parameter, T] =
     Free.pure(value)

@@ -57,7 +57,12 @@ object UsageInfoExtractor {
   type MergedChoices = Map[Parameter[_], Set[Choice]]
   type ResultGraph = Graph[GraphNode, Choices]
 
-  case class ExtractUsageInfoState(isInOptionalBlock: Boolean, last: Option[GraphNode], choices: Choices)
+  case class UsageDescription(resultGraph: ResultGraph, metadata: Option[ParameterParserMetadata])
+
+  case class ExtractUsageInfoState(isInOptionalBlock: Boolean,
+                                   last: Option[GraphNode],
+                                   choices: Choices,
+                                   metadata: Option[ParameterParserMetadata])
 
   private type UsageInfoExtractor = Fx.fx3[Choose, Writer[ResultGraph, ?], State[ExtractUsageInfoState, ?]]
   private type UsageInfoM[A] = Eff[UsageInfoExtractor, A]
@@ -74,22 +79,24 @@ object UsageInfoExtractor {
         impl.command(command)
       case Optional(parameter) =>
         impl.optional(parameter)
+      case SetMetadata(metadata) =>
+        impl.setMetadata(metadata)
     }
   }
 
-  def getUsageDescription[T](by: Free[Parameter, T]): ResultGraph = {
+  def getUsageDescription[T](by: Free[Parameter, T]): UsageDescription = {
 
-    val initialState = ExtractUsageInfoState(isInOptionalBlock = false, last = None, choices = Map.empty)
+    val initialState = ExtractUsageInfoState(isInOptionalBlock = false, last = None, choices = Map.empty, metadata = None)
     val extractor = for {
       result <- by.foldMap(usageInfoExtractor)
       _ <- impl.reset()
     } yield result
 
-    val extractorResult = extractor.runWriter.runChoose[List].evalState(initialState).run
+    val (extractorResult, finalState) = extractor.runWriter.runChoose[List].runState(initialState).run
     val graphs = extractorResult.flatMap(_._2)
     val combined = Monoid.combineAll(graphs)
 
-    combined
+    UsageDescription(resultGraph = combined, metadata = finalState.metadata)
   }
 
 
@@ -173,6 +180,13 @@ object UsageInfoExtractor {
           _ <- put[UsageInfoExtractor, ExtractUsageInfoState](finalState.copy(isInOptionalBlock = false))
         } yield None
       }
+    }
+
+    def setMetadata(metadata: ParameterParserMetadata): UsageInfoM[Unit] = {
+      for {
+        state <- getState
+        _ <- put[UsageInfoExtractor, ExtractUsageInfoState](state.copy(metadata = Some(metadata)))
+      } yield ()
     }
   }
 

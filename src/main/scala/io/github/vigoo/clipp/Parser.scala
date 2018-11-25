@@ -43,6 +43,8 @@ object Parser {
         }
       case Optional(parameter) =>
         lift(impl.optional(parameter))
+      case SetMetadata(metadata) =>
+        lift(impl.setMetadata(metadata))
     }
   }
 
@@ -58,6 +60,8 @@ object Parser {
         impl.command(cmd, validateCommandLocations = true).map(_.value)
       case Optional(parameter) =>
         impl.optional(parameter)
+      case SetMetadata(metadata) =>
+        impl.setMetadata(metadata)
     }
   }
 
@@ -259,5 +263,8 @@ object Parser {
         )
       } yield finalResult
     }
+
+    def setMetadata(metadata: ParameterParserMetadata): ExtractStateM[Unit] =
+      pure(())
   }
 }

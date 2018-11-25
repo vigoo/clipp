@@ -16,8 +16,8 @@ object UsageInfo {
   case object ExitBranch extends PrettyPrintCommand
 
   // TODO: input choices (so for example fixed command choices filter the usage info)
-  def generateUsageInfo(usageDescription: ResultGraph): Either[String, Vector[PrettyPrintCommand]] = {
-    val usageNodes = usageDescription.toNodes
+  def generateUsageInfo(usageDescription: UsageDescription): Either[String, Vector[PrettyPrintCommand]] = {
+    val usageNodes = usageDescription.resultGraph.toNodes
     usageNodes.find(_.sourceNodes.isEmpty) match {
       case Some(start) =>
         Right(generateUsageInfo(start))

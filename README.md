@@ -24,6 +24,8 @@ case class TestParameters(verbose: Boolean,
                         
 val paramSpec =
   for {
+    _ <- metadata(programName = "example")
+
     verbose <- flag("Verbose output", 'v', "verbose")
     input <- parameter[File]("Input file's path", "file")
     output <- optional { parameter[File]("Output file's path", "file") }

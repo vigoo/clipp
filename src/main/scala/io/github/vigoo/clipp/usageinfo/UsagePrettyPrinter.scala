@@ -2,23 +2,30 @@ package io.github.vigoo.clipp.usageinfo
 
 import io.github.vigoo.clipp._
 import io.github.vigoo.clipp.usageinfo.UsageInfo._
-import io.github.vigoo.clipp.usageinfo.UsageInfoExtractor.ResultGraph
+import io.github.vigoo.clipp.usageinfo.UsageInfoExtractor.{DescribedParameter, ResultGraph, UsageDescription}
 
 import scala.annotation.tailrec
 import scala.collection.mutable
 
 object UsagePrettyPrinter {
 
-  def prettyPrint(usageDescription: ResultGraph): String = {
+  def prettyPrint(usageDescription: UsageDescription): String = {
     UsageInfo.generateUsageInfo(usageDescription) match {
       case Left(failure) =>
         failure
       case Right(commands) =>
-        prettyPrint(commands.toList, 0, mutable.StringBuilder.newBuilder)
+        val commandList = commands.toList
+        val builder = mutable.StringBuilder.newBuilder
+
+        usageDescription.metadata.foreach { metadata =>
+          prettyPrintUsage(metadata, commandList, builder)
+          prettyPrintDescription(metadata, builder)
+        }
+        prettyPrint(commandList, 1, builder)
     }
   }
 
-  private val descriptionX = 40
+  private val descriptionX = 40 // TODO: make this configurable
 
   private def prettyPrintOptionsAndDesc(level: Int, options: String, description: String, isOptional: Boolean, builder: StringBuilder): Unit = {
     builder.append("  " * level)
@@ -60,6 +67,8 @@ object UsagePrettyPrinter {
               "command"
             case Optional(parameter) =>
               throw new IllegalStateException(s"Optionals should have been prefiltered")
+            case _: SetMetadata =>
+              throw new IllegalStateException(s"SetMetadata should have been prefiltered")
           }
 
         val values = choices.toList.sorted.map(_.value).mkString(", ")
@@ -94,6 +103,9 @@ object UsagePrettyPrinter {
 
           case Optional(parameter) =>
             throw new IllegalStateException(s"Optionals should have been prefiltered")
+
+          case _: SetMetadata =>
+            throw new IllegalStateException(s"SetMetadata should have been prefiltered")
         }
         prettyPrint(remaining, level, builder)
       case PrintChoice(choice) :: remaining =>
@@ -107,4 +119,85 @@ object UsagePrettyPrinter {
         prettyPrint(remaining, level - 1, builder)
     }
 
+  private def prettyPrintUsageIfSingle(params: Seq[DescribedParameter], builder: StringBuilder): Unit = {
+    params match {
+      case Seq() =>
+      case param +: Seq() =>
+        param.parameter match {
+          case flag: Flag =>
+            builder.append(" [")
+            builder.append(flag.shortName.map(v => s"-$v").getOrElse(s"--${flag.longNames.head}"))
+            builder.append(']')
+          case namedParam: NamedParameter[_] =>
+            builder.append(' ')
+            builder.append(namedParam.shortName.map(v => s"-$v").getOrElse(s"--${namedParam.longNames.head}"))
+            builder.append(s" <${namedParam.placeholder}")
+          case _ =>
+        }
+      case _ =>
+        builder.append(" [parameters]")
+    }
+  }
+
+  private def prettyPrintUsage(metadata: ParameterParserMetadata, cmds: List[PrettyPrintCommand], builder: StringBuilder): Unit = {
+    builder.append("Usage: ")
+    builder.append(metadata.programName)
+
+    var branchDepth = 0
+    val paramSet = mutable.Set.empty[DescribedParameter]
+
+    for (cmd <- cmds) {
+      cmd match {
+        case PrintNode(param) =>
+          if (branchDepth == 0) {
+            param.parameter match {
+              case flag: Flag =>
+                paramSet += param
+              case namedParam: NamedParameter[_] =>
+                paramSet += param
+              case SimpleParameter(placeholder, description, parameterParser) =>
+                prettyPrintUsageIfSingle(paramSet.toSeq, builder)
+                paramSet.clear()
+                if (param.isInOptionalBlock) {
+                  builder.append(s" <$placeholder>")
+                } else {
+                  builder.append(s" [$placeholder]")
+                }
+              case Command(_) =>
+                prettyPrintUsageIfSingle(paramSet.toSeq, builder)
+                paramSet.clear()
+                if (param.isInOptionalBlock) {
+                  builder.append(" <command>")
+                } else {
+                  builder.append(" [command]")
+                }
+              case Optional(parameter) =>
+                throw new IllegalStateException(s"Optionals should have been prefiltered")
+              case _: SetMetadata =>
+                throw new IllegalStateException(s"SetMetadata should have been prefiltered")
+            }
+          }
+
+        case PrintChoice(choice) =>
+
+        case UsageInfo.StartBranch =>
+          if (branchDepth == 0) {
+            builder.append(" ...")
+          }
+          branchDepth = branchDepth + 1
+        case UsageInfo.ExitBranch =>
+          branchDepth = branchDepth - 1
+      }
+    }
+    // TODO
+
+    builder.append("\n\n")
+  }
+
+  private def prettyPrintDescription(metadata: ParameterParserMetadata, builder: StringBuilder): Unit = {
+    metadata.description.foreach { desc =>
+      builder.append(desc)
+      builder.append('\n')
+    }
+  }
 }
