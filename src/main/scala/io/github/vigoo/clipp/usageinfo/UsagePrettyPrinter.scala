@@ -60,13 +60,13 @@ object UsagePrettyPrinter {
 
         val what =
           param match {
-            case Flag(shortName, longNames, _) =>
+            case Flag(shortName, longNames, _, _) =>
               shortName.map("-" + _).getOrElse("--" + longNames.head)
-            case NamedParameter(shortName, longNames, _, _, _) =>
+            case NamedParameter(shortName, longNames, _, _, _, _) =>
               shortName.map("-" + _).getOrElse("--" + longNames.head)
-            case SimpleParameter(placeholder, _, _) =>
+            case SimpleParameter(placeholder, _, _, _) =>
               s"<$placeholder>"
-            case Command(_) =>
+            case Command(_, _) =>
               "command"
             case Optional(parameter) =>
               throw new IllegalStateException(s"Optionals should have been prefiltered")
@@ -90,18 +90,18 @@ object UsagePrettyPrinter {
       case Nil => builder.toString
       case PrintNode(param) :: remaining =>
         param.parameter match {
-          case Flag(shortName, longNames, description) =>
+          case Flag(shortName, longNames, description, _) =>
             val allOptions = shortName.map("-" + _).toList ::: longNames.map("--" + _).toList
             prettyPrintOptionsAndDesc(level, allOptions.mkString(", "), description, param.isInOptionalBlock, builder)
 
-          case NamedParameter(shortName, longNames, placeholder, description, _) =>
+          case NamedParameter(shortName, longNames, placeholder, description, _, _) =>
             val allOptions = shortName.map(c => s"-$c <$placeholder>").toList ::: longNames.map(n => s"--$n <$placeholder>").toList
             prettyPrintOptionsAndDesc(level, allOptions.mkString(", "), description, param.isInOptionalBlock, builder)
 
-          case SimpleParameter(placeholder, description, _) =>
+          case SimpleParameter(placeholder, description, _, _) =>
             prettyPrintOptionsAndDesc(level, s"<$placeholder>", description, param.isInOptionalBlock, builder)
 
-          case Command(validCommands) =>
+          case Command(validCommands, _) =>
             prettyPrintOptionsAndDesc(level, s"<command>", s"One of ${validCommands.mkString(", ")}", param.isInOptionalBlock, builder)
 
           case Optional(parameter) =>
@@ -154,11 +154,11 @@ object UsagePrettyPrinter {
         case PrintNode(param) =>
           if (branchDepth == 0) {
             param.parameter match {
-              case flag: Flag =>
+              case _: Flag =>
                 paramSet += param
-              case namedParam: NamedParameter[_] =>
+              case _: NamedParameter[_] =>
                 paramSet += param
-              case SimpleParameter(placeholder, description, parameterParser) =>
+              case SimpleParameter(placeholder, description, parameterParser, _) =>
                 prettyPrintUsageIfSingle(paramSet.toSeq, builder)
                 paramSet.clear()
                 if (param.isInOptionalBlock) {
@@ -166,7 +166,7 @@ object UsagePrettyPrinter {
                 } else {
                   builder.append(s" [$placeholder]")
                 }
-              case Command(_) =>
+              case _: Command =>
                 prettyPrintUsageIfSingle(paramSet.toSeq, builder)
                 paramSet.clear()
                 if (param.isInOptionalBlock) {
@@ -192,7 +192,6 @@ object UsagePrettyPrinter {
           branchDepth = branchDepth - 1
       }
     }
-    // TODO
 
     builder.append("\n\n")
   }
