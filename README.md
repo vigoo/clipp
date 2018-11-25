@@ -1,7 +1,9 @@
 # clipp
-Functional command line argument parser and usage info generator for Scala.
+[![Build Status](https://travis-ci.org/vigoo/simpp.svg?branch=master)](https://travis-ci.org/vigoo/simpp)
+[![codecov](https://codecov.io/gh/vigoo/simpp/branch/master/graph/badge.svg)](https://codecov.io/gh/vigoo/simpp)
+[![Apache 2 License License](http://img.shields.io/badge/license-APACHE2-blue.svg)](http://www.apache.org/licenses/LICENSE-2.0)
 
-**NOT PRODUCTION READY YET!** 
+Functional command line argument parser and usage info generator for Scala.
 
 ### The idea
 The main difference between *clipp* and other similar libraries is that the parsing specification is monadic. 
