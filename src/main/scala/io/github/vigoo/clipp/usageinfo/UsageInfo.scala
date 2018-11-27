@@ -1,6 +1,7 @@
 package io.github.vigoo.clipp.usageinfo
 
 import io.github.vigoo.clipp._
+import io.github.vigoo.clipp.choices._
 import io.github.vigoo.clipp.usageinfo.UsageInfoExtractor._
 
 object UsageInfo {

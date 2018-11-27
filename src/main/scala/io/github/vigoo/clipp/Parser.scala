@@ -4,12 +4,15 @@ import cats.data._
 import cats.free.Free
 import cats._
 import cats.implicits._
+import io.github.vigoo.clipp.choices.{ArbitraryChoice, BooleanChoice, Choices, CommandChoice}
 
 object Parser {
   case class CommandLocation(position: Int, value: String)
   case class PositionedParameter(originalPosition: Int, value: String)
 
-  case class ExtractParametersState(nonParsedArguments: Vector[PositionedParameter], remainingCommandPositions: List[CommandLocation]) {
+  case class ExtractParametersState(nonParsedArguments: Vector[PositionedParameter],
+                                    remainingCommandPositions: List[CommandLocation],
+                                    recordedChoices: Choices) {
     def isBeforeNextCommand(positionedParameter: PositionedParameter): Boolean = {
       remainingCommandPositions.headOption match {
         case Some(CommandLocation(position, _)) =>
@@ -65,32 +68,34 @@ object Parser {
     }
   }
 
-  // TODO: in case of error, also return the fixed choices to be able to filter the usage info
-  def extractParameters[T](from: Array[String], by: Free[Parameter, T]): EitherNel[ParserError, T] = {
+  def extractParameters[T](from: Array[String], by: Free[Parameter, T]): Either[ParserFailure, T] = {
     val initialState = ExtractParametersState(
-      from.toVector.zipWithIndex.map { case (v, i) => PositionedParameter(i, v) },
-      List.empty)
+      nonParsedArguments = from.toVector.zipWithIndex.map { case (v, i) => PositionedParameter(i, v) },
+      remainingCommandPositions = List.empty,
+      recordedChoices = Map.empty)
 
-    val (_, preprocessResult) = by.foldMap(commandLocator).run.value.run(initialState).value
+    val (preprocessorFinalState, preprocessResult) = by.foldMap(commandLocator).run.value.run(initialState).value
     preprocessResult match {
       case Right((commandLocations, _)) =>
         val preprocessedState = initialState.copy(remainingCommandPositions = commandLocations)
 
         val (finalState, result) = by.foldMap(parameterExtractor).value.run(preprocessedState).value
+        val partialChoices = finalState.recordedChoices
+
         result match {
           case Left(errors) =>
-            Left(errors)
-          case Right(_) =>
+            Left(ParserFailure(errors, partialChoices))
+          case Right(value) =>
             val unprocessedParameters = NonEmptyList.fromList(finalState.nonParsedArguments.map(_.value).toList)
             unprocessedParameters match {
               case Some(params) =>
-                Either.left(params.map(UnknownParameter.apply))
+                Either.left(ParserFailure(params.map(UnknownParameter.apply), partialChoices))
               case None =>
-                result
+                Right(value)
             }
         }
       case Left(errors) =>
-        Left(errors)
+        Left(ParserFailure(errors, preprocessorFinalState.recordedChoices))
     }
   }
 
@@ -132,10 +137,13 @@ object Parser {
           index match {
             case Some(idx) =>
               state.copy(
-                nonParsedArguments = state.nonParsedArguments.patch(idx, Seq.empty, 1)
+                nonParsedArguments = state.nonParsedArguments.patch(idx, Seq.empty, 1),
+                recordedChoices = state.recordedChoices.updated(flag, BooleanChoice(true))
               )
             case None =>
-              state
+              state.copy(
+                recordedChoices = state.recordedChoices.updated(flag, BooleanChoice(false))
+              )
           }
         )
       } yield index.isDefined
@@ -173,7 +181,8 @@ object Parser {
           index match {
             case Some(idx) =>
               state.copy(
-                nonParsedArguments = state.nonParsedArguments.patch(idx, Seq.empty, 2)
+                nonParsedArguments = state.nonParsedArguments.patch(idx, Seq.empty, 2),
+                recordedChoices = state.recordedChoices.updated(namedParam, ArbitraryChoice(result))
               )
             case None =>
               state
@@ -194,7 +203,10 @@ object Parser {
           firstMatch match {
             case Some(value) =>
               val idx = state.nonParsedArguments.map(_.value).indexOf(value)
-              state.copy(nonParsedArguments = state.nonParsedArguments.patch(idx, Seq.empty, 1))
+              state.copy(
+                nonParsedArguments = state.nonParsedArguments.patch(idx, Seq.empty, 1),
+                recordedChoices = state.recordedChoices.updated(simpleParam, ArbitraryChoice(result))
+              )
             case None =>
               state
           }
@@ -238,7 +250,8 @@ object Parser {
               val idx = state.nonParsedArguments.map(_.value).indexOf(value)
               state.copy(
                 nonParsedArguments = state.nonParsedArguments.drop(idx + 1),
-                remainingCommandPositions = state.remainingCommandPositions.drop(1)
+                remainingCommandPositions = state.remainingCommandPositions.drop(1),
+                recordedChoices = state.recordedChoices.updated(cmd, CommandChoice(value, cmd.validCommands))
               )
             case None =>
               state

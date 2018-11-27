@@ -5,6 +5,7 @@ import java.nio.file.Paths
 
 import cats.data.NonEmptyList
 import cats.free.Free
+import org.specs2.matcher.Matcher
 import org.specs2.mutable._
 import syntax._
 import parsers._
@@ -60,8 +61,8 @@ class ParserSpecs extends Specification {
     }
 
     "report undefined flags" in {
-      Parser.extractParameters(Array("--verbose", "-H", "--other"), specFlags) should beLeft(
-        NonEmptyList(UnknownParameter("-H"), List(UnknownParameter("--other")))
+      Parser.extractParameters(Array("--verbose", "-H", "--other"), specFlags) should failWithErrors(
+        UnknownParameter("-H"), UnknownParameter("--other")
       )
     }
 
@@ -78,8 +79,8 @@ class ParserSpecs extends Specification {
     }
 
     "report only the missing parameters as missing" in {
-      Parser.extractParameters(Array("--password", "xxx", "-v", "-k"), specNamedParams) should beLeft(
-        NonEmptyList(MissingNamedParameter(Set("--username", "--name", "-u")), List.empty)
+      Parser.extractParameters(Array("--password", "xxx", "-v", "-k"), specNamedParams) should failWithErrors(
+        MissingNamedParameter(Set("--username", "--name", "-u"))
       )
     }
 
@@ -134,8 +135,8 @@ class ParserSpecs extends Specification {
         ("test", Some((10, 20)))
       )
 
-      Parser.extractParameters(Array("--required", "test", "-w", "10"), spec) should beLeft(
-        NonEmptyList(UnknownParameter("-w"), List(UnknownParameter("10")))
+      Parser.extractParameters(Array("--required", "test", "-w", "10"), spec) should failWithErrors(
+        UnknownParameter("-w"), UnknownParameter("10")
       )
 
       Parser.extractParameters(Array("--required", "test"), spec) should beRight(
@@ -158,14 +159,14 @@ class ParserSpecs extends Specification {
     }
 
     "refuse invalid command" in {
-      Parser.extractParameters(Array("third", "--name", "test", "--password", "xxx"), specCommand) should beLeft(
-        NonEmptyList(InvalidCommand("third", List("first", "second")), List.empty)
+      Parser.extractParameters(Array("third", "--name", "test", "--password", "xxx"), specCommand) should failWithErrors(
+        InvalidCommand("third", List("first", "second"))
       )
     }
 
     "does not accept parameters after command" in {
-      Parser.extractParameters(Array("first", "-v", "--name", "test", "--password", "xxx"), specCommand) should beLeft(
-        NonEmptyList(UnknownParameter("-v"), List.empty)
+      Parser.extractParameters(Array("first", "-v", "--name", "test", "--password", "xxx"), specCommand) should failWithErrors(
+        UnknownParameter("-v")
       )
     }
 
@@ -176,9 +177,15 @@ class ParserSpecs extends Specification {
         cmd <- command("first")
       } yield cmd
 
-      Parser.extractParameters(Array("param", "first", "-b"), spec) should beLeft(
-        NonEmptyList(CommandPositionIsNotStatic(List("first")), List.empty)
-      )
+      Parser.extractParameters(Array("param", "first", "-b"), spec) should failWithErrors(CommandPositionIsNotStatic(List("first")))
     }
   }
+
+  def failWithErrors[T](error0: ParserError, errorss: ParserError*): Matcher[Either[ParserFailure, T]] =
+    (result: Either[ParserFailure, T]) =>
+      result match {
+        case Right(_) => ko("Expected failure, got success")
+        case Left(ParserFailure(errors, _)) =>
+          errors should beEqualTo(NonEmptyList(error0, errorss.toList))
+      }
 }

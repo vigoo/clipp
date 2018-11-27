@@ -24,7 +24,7 @@ object Playground {
     val paramSpec =
       for {
         _ <- metadata(programName = "playground", description = "Testing some features of the new CLI parameter parser")
-        verbose <- flag("Verbose output", 'v', List("verbose"), withDocumentedChoices = List(false)) // this makes 'Y' never show up in the usage info!
+        verbose <- flag("Verbose output", 'v', "verbose")
         input <- parameter[File]("Input file's path", "file")
         output <- optional { parameter[File]("Output file's path", "file") }
         weight <- if (verbose) {

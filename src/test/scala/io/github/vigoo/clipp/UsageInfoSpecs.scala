@@ -5,8 +5,9 @@ import java.io.File
 import cats.free.Free
 import io.github.vigoo.clipp.parsers._
 import io.github.vigoo.clipp.syntax._
+import io.github.vigoo.clipp.choices._
 import io.github.vigoo.clipp.usageinfo.UsageInfo._
-import io.github.vigoo.clipp.usageinfo.UsageInfoExtractor.{BooleanChoice, CommandChoice, MergedChoices}
+import io.github.vigoo.clipp.usageinfo.UsageInfoExtractor.MergedChoices
 import io.github.vigoo.clipp.usageinfo.debug._
 import io.github.vigoo.clipp.usageinfo.{UsageInfo, UsageInfoExtractor, UsagePrettyPrinter}
 import org.specs2.matcher.Matcher

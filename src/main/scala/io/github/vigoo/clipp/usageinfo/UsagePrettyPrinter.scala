@@ -53,7 +53,7 @@ object UsagePrettyPrinter {
     builder.append('\n')
   }
 
-  private def prettyPrintChoice(choice: (Parameter[_], Set[UsageInfoExtractor.Choice])): String = {
+  private def prettyPrintChoice(choice: (Parameter[_], Set[choices.Choice])): String = {
 
     choice match {
       case (param, choices) =>
