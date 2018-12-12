@@ -6,6 +6,7 @@ import cats.data.NonEmptyList
 import cats.free.Free.liftF
 import cats.free._
 import io.github.vigoo.clipp.choices.Choices
+import io.github.vigoo.clipp.errors.ParserError
 
 import scala.util.Try
 
@@ -114,15 +115,46 @@ object choices {
 case class ParserFailure(errors: NonEmptyList[ParserError], partialChoices: Choices)
 
 
-sealed trait ParserError
-case class UnknownParameter(parameter: String) extends ParserError
-case class MissingNamedParameter(variants: Set[String]) extends ParserError
-case class MissingValueForNamedParameter(parameter: String) extends ParserError
-case class MissingSimpleParameter(placeholder: String) extends ParserError
-case class MissingCommand(validCommands: List[String]) extends ParserError
-case class InvalidCommand(command: String, validCommands: List[String]) extends ParserError
-case class FailedToParseValue(message: String, value: String) extends ParserError
-case class CommandPositionIsNotStatic(validCommands: List[String]) extends ParserError
+object errors {
+
+  sealed trait ParserError
+
+  case class UnknownParameter(parameter: String) extends ParserError
+
+  case class MissingNamedParameter(variants: Set[String]) extends ParserError
+
+  case class MissingValueForNamedParameter(parameter: String) extends ParserError
+
+  case class MissingSimpleParameter(placeholder: String) extends ParserError
+
+  case class MissingCommand(validCommands: List[String]) extends ParserError
+
+  case class InvalidCommand(command: String, validCommands: List[String]) extends ParserError
+
+  case class FailedToParseValue(message: String, value: String) extends ParserError
+
+  case class CommandPositionIsNotStatic(validCommands: List[String]) extends ParserError
+
+  def display(errors: NonEmptyList[ParserError]): String = {
+    if (errors.length == 1) {
+      display(errors.head)
+    } else {
+      ("Problems:" :: errors.map(display).map(" * " + _).toList).mkString("\n")
+    }
+  }
+
+  def display(error: ParserError): String =
+    error match {
+      case UnknownParameter(parameter) => s"Unknown parameter $parameter"
+      case MissingNamedParameter(variants) => s"Missing named parameter ${variants.mkString("/")}"
+      case MissingValueForNamedParameter(parameter) => s"Named parameter $parameter is missing a value"
+      case MissingSimpleParameter(placeholder) => s"Simple parameter $placeholder is missing"
+      case MissingCommand(validCommands) => s"Command is missing. Valid commands: ${validCommands.mkString(", ")}"
+      case InvalidCommand(command, validCommands) => s"Invalid command $command. Valid commands: ${validCommands.mkString(", ")}"
+      case FailedToParseValue(message, value) => s"Failed to parse value $value: $message"
+      case CommandPositionIsNotStatic(validCommands) => s"Command position is not static. Valid commands: ${validCommands.mkString(", ")}"
+    }
+}
 
 
 object parsers {

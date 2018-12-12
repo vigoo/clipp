@@ -5,6 +5,7 @@ import cats.free.Free
 import cats._
 import cats.implicits._
 import io.github.vigoo.clipp.choices.{ArbitraryChoice, BooleanChoice, Choices, CommandChoice}
+import io.github.vigoo.clipp.errors._
 
 object Parser {
   case class CommandLocation(position: Int, value: String)

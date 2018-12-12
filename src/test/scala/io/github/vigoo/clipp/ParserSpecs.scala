@@ -1,14 +1,14 @@
 package io.github.vigoo.clipp
 
 import java.io.File
-import java.nio.file.Paths
 
 import cats.data.NonEmptyList
 import cats.free.Free
+import io.github.vigoo.clipp.errors._
+import io.github.vigoo.clipp.parsers._
+import io.github.vigoo.clipp.syntax._
 import org.specs2.matcher.Matcher
 import org.specs2.mutable._
-import syntax._
-import parsers._
 
 class ParserSpecs extends Specification {
 
@@ -168,16 +168,6 @@ class ParserSpecs extends Specification {
       Parser.extractParameters(Array("first", "-v", "--name", "test", "--password", "xxx"), specCommand) should failWithErrors(
         UnknownParameter("-v")
       )
-    }
-
-    "dynamic command location is forbidden" in {
-      val spec = for {
-        b <- flag("Switches a parameter", 'b')
-        p <- if (b) parameter[String]("parameter", "value") else Free.pure[Parameter, String]("not specified")
-        cmd <- command("first")
-      } yield cmd
-
-      Parser.extractParameters(Array("param", "first", "-b"), spec) should failWithErrors(CommandPositionIsNotStatic(List("first")))
     }
   }
 

@@ -53,7 +53,7 @@ object Playground {
 
     Parser.extractParameters(args, paramSpec) match {
       case Left(error) =>
-        println(error)
+        println(errors.display(error.errors))
 
         val usageGraph = UsageInfoExtractor.getUsageDescription(paramSpec)
         println(UsagePrettyPrinter.prettyPrint(usageGraph))
