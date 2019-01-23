@@ -29,6 +29,7 @@ object UsageInfoExtractor {
   case class ExtractUsageInfoState(isInOptionalBlock: Boolean,
                                    last: Option[GraphNode],
                                    choices: Choices,
+                                   fixedChoices: Choices,
                                    metadata: Option[ParameterParserMetadata])
 
   private type UsageInfoExtractor = Fx.fx3[Choose, Writer[ResultGraph, ?], State[ExtractUsageInfoState, ?]]
@@ -51,9 +52,14 @@ object UsageInfoExtractor {
     }
   }
 
-  def getUsageDescription[T](by: Free[Parameter, T]): UsageDescription = {
+  def getUsageDescription[T](by: Free[Parameter, T], partialChoices: Choices = Map.empty): UsageDescription = {
 
-    val initialState = ExtractUsageInfoState(isInOptionalBlock = false, last = None, choices = Map.empty, metadata = None)
+    val initialState = ExtractUsageInfoState(
+      isInOptionalBlock = false,
+      last = None,
+      choices = Map.empty,
+      fixedChoices = partialChoices,
+      metadata = None)
     val extractor = for {
       result <- by.foldMap(usageInfoExtractor)
       _ <- impl.reset()
@@ -71,10 +77,14 @@ object UsageInfoExtractor {
     private def getState: UsageInfoM[ExtractUsageInfoState] =
       get[UsageInfoExtractor, ExtractUsageInfoState]
 
-    private def choice[T](from: List[T]): UsageInfoM[T] = {
+    private def choice[T](param: Parameter[T], from: List[T]): UsageInfoM[T] = {
       for {
         state <- getState
-        value <- chooseFrom[UsageInfoExtractor, T](from)
+        finalFrom = state.fixedChoices.get(param) match {
+          case Some(choice) => List(choice.value.asInstanceOf[T])
+          case None => from
+        }
+        value <- chooseFrom[UsageInfoExtractor, T](finalFrom)
         _ <- put[UsageInfoExtractor, ExtractUsageInfoState](state) // restore state
       } yield value
     }
@@ -109,28 +119,28 @@ object UsageInfoExtractor {
 
     def flag(flag: Flag): UsageInfoM[Boolean] = {
       for {
-        enabled <- choice[Boolean](flag.explicitChoices.getOrElse(List(false, true)))
+        enabled <- choice[Boolean](flag, flag.explicitChoices.getOrElse(List(false, true)))
         _ <- record(flag, BooleanChoice(enabled))
       } yield enabled
     }
 
     def namedParameter[T](namedParameter: NamedParameter[T], result: T): UsageInfoM[T] = {
       for {
-        value <- choice[T](namedParameter.explicitChoices.getOrElse(List(result)))
+        value <- choice[T](namedParameter, namedParameter.explicitChoices.getOrElse(List(result)))
         _ <- record(namedParameter, ArbitraryChoice(value))
       } yield result
     }
 
     def simpleParameter[T](simpleParameter: SimpleParameter[T], result: T): UsageInfoM[T] = {
       for {
-        value <- choice[T](simpleParameter.explicitChoices.getOrElse(List(result)))
+        value <- choice[T](simpleParameter, simpleParameter.explicitChoices.getOrElse(List(result)))
         _ <- record(simpleParameter, ArbitraryChoice(value))
       } yield result
     }
 
     def command(command: Command): UsageInfoM[String] = {
       for {
-        choice <- choice[String](command.explicitChoices.getOrElse(command.validCommands))
+        choice <- choice[String](command, command.explicitChoices.getOrElse(command.validCommands))
         _ <- record(command, CommandChoice(choice, command.validCommands))
       } yield choice
     }

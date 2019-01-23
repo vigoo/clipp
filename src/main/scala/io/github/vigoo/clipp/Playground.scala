@@ -55,7 +55,7 @@ object Playground {
       case Left(error) =>
         println(errors.display(error.errors))
 
-        val usageGraph = UsageInfoExtractor.getUsageDescription(paramSpec)
+        val usageGraph = UsageInfoExtractor.getUsageDescription(paramSpec, error.partialChoices)
         println(UsagePrettyPrinter.prettyPrint(usageGraph))
       case Right(result) =>
         println(result)

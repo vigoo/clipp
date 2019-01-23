@@ -134,7 +134,7 @@ object UsagePrettyPrinter {
           case namedParam: NamedParameter[_] =>
             builder.append(' ')
             builder.append(namedParam.shortName.map(v => s"-$v").getOrElse(s"--${namedParam.longNames.head}"))
-            builder.append(s" <${namedParam.placeholder}")
+            builder.append(s" <${namedParam.placeholder}>")
           case _ =>
         }
       case _ =>
