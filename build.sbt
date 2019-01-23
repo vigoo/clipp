@@ -1,4 +1,5 @@
 name := "clipp"
+organization := "io.github.vigoo"
 
 version := "0.1-SNAPSHOT"
 
