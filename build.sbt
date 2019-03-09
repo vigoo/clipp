@@ -13,7 +13,7 @@ libraryDependencies ++= Seq(
 
   "org.atnos" %% "eff" % "5.5.0",
 
-  "org.specs2" %% "specs2-core" % "4.4.1" % "test"
+  "org.specs2" %% "specs2-core" % "4.5.0" % "test"
 )
 
 coverageEnabled in(Test, compile) := true
