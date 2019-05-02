@@ -5,6 +5,10 @@
 
 Functional command line argument parser and usage info generator for Scala.
 
+```scala
+libraryDependencies += "io.github.vigoo" %% "prox" % "0.3"
+```
+
 ### The idea
 The main difference between *clipp* and other similar libraries is that the parsing specification is monadic. 
 This makes it very easy to use in a functional style without making compromises of the generated data structure.
