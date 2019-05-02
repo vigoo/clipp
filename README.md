@@ -6,7 +6,7 @@
 Functional command line argument parser and usage info generator for Scala.
 
 ```scala
-libraryDependencies += "io.github.vigoo" %% "prox" % "0.3"
+libraryDependencies += "io.github.vigoo" %% "clipp" % "0.1"
 ```
 
 ### The idea
