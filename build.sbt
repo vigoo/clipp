@@ -8,8 +8,8 @@ scalaVersion := "2.12.6"
 addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.10")
 
 libraryDependencies ++= Seq(
-  "org.typelevel" %% "cats-core" % "1.6.0",
-  "org.typelevel" %% "cats-free" % "1.6.0",
+  "org.typelevel" %% "cats-core" % "1.6.1",
+  "org.typelevel" %% "cats-free" % "1.6.1",
 
   "org.atnos" %% "eff" % "5.5.0",
 
