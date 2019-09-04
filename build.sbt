@@ -5,7 +5,7 @@ version := "0.1-SNAPSHOT"
 
 scalaVersion := "2.12.6"
 
-addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.10")
+addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.10.0")
 
 libraryDependencies ++= Seq(
   "org.typelevel" %% "cats-core" % "1.6.1",
