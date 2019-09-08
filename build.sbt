@@ -5,7 +5,7 @@ version := "0.1-SNAPSHOT"
 
 scalaVersion := "2.12.6"
 
-addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.10.0")
+addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.10.3")
 
 libraryDependencies ++= Seq(
   "org.typelevel" %% "cats-core" % "1.6.1",
