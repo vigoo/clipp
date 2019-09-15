@@ -11,7 +11,7 @@ libraryDependencies ++= Seq(
   "org.typelevel" %% "cats-core" % "2.0.0",
   "org.typelevel" %% "cats-free" % "2.0.0",
 
-  "org.atnos" %% "eff" % "5.5.0",
+  "org.atnos" %% "eff" % "5.5.1",
 
   "org.specs2" %% "specs2-core" % "4.7.0" % "test"
 )
