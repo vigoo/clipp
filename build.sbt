@@ -1,9 +1,13 @@
 name := "clipp"
 organization := "io.github.vigoo"
 
-version := "0.1-SNAPSHOT"
+dynverSonatypeSnapshots in ThisBuild := true
 
-scalaVersion := "2.12.6"
+val scala212 = "2.12.8"
+val scala213 = "2.13.0"
+
+scalaVersion := scala213
+crossScalaVersions := List(scala212, scala213)
 
 addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.10.3")
 
@@ -19,8 +23,14 @@ libraryDependencies ++= Seq(
 coverageEnabled in(Test, compile) := true
 coverageEnabled in(Compile, compile) := false
 
-scalacOptions ++= Seq("-Ypartial-unification", "-deprecation", "-feature")
-scalacOptions in Test ++= Seq("-Yrangepos")
+val scalacOptions212 = Seq("-Ypartial-unification", "-deprecation")
+val scalacOptions213 = Seq("-deprecation")
+
+scalacOptions ++= (CrossVersion.partialVersion(scalaVersion.value) match {
+  case Some((2, 12)) => scalacOptions212
+  case Some((2, 13)) => scalacOptions213
+  case _ => Nil
+})
 
 // Publishing
 
