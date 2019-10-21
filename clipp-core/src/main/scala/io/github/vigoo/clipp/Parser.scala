@@ -69,7 +69,7 @@ object Parser {
     }
   }
 
-  def extractParameters[T](from: Array[String], by: Free[Parameter, T]): Either[ParserFailure, T] = {
+  def extractParameters[T](from: Seq[String], by: Free[Parameter, T]): Either[ParserFailure, T] = {
     val initialState = ExtractParametersState(
       nonParsedArguments = from.toVector.zipWithIndex.map { case (v, i) => PositionedParameter(i, v) },
       remainingCommandPositions = List.empty,

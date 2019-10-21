@@ -6,7 +6,7 @@
 Functional command line argument parser and usage info generator for Scala.
 
 ```scala
-libraryDependencies += "io.github.vigoo" %% "clipp" % "0.2.0"
+libraryDependencies += "io.github.vigoo" %% "clipp-core" % "0.3.0"
 ```
 
 ### The idea
@@ -152,3 +152,66 @@ locking them to a particular value statically with the `withExplicitChoices = Li
 
 This can be used to display only relevant parts of the usage info, for example in sub-command
 style cases.
+
+## ZIO and Cats-Effect interfaces
+There are lightweight [ZIO](https://zio.dev/) and [Cats-Effect](https://typelevel.org/cats-effect/) wrappers on top of `clipp-core`
+connecting parameter parsing and error display together in a convenient way. 
+
+### ZIO
+To use the ZIO interface add the following dependency:
+
+```scala
+libraryDependencies += "io.github.vigoo" %% "clipp-zio" % "0.3.0"
+```
+
+Example:
+```scala
+import io.github.vigoo.clipp._
+import io.github.vigoo.clipp.parsers._
+import io.github.vigoo.clipp.syntax._
+import io.github.vigoo.clipp.zio._
+
+import zio._
+
+object Test extends App {
+  override def run(args: List[String]): ZIO[ZEnv, Nothing, Int] = {
+    val paramSpec = for {
+      _ <- metadata("zio-test")
+      x <- flag("test parameter", 'x')
+    } yield x
+
+    Clipp.parseOrDisplayUsageInfo(args, paramSpec) { x =>
+      console.putStrLn(s"x was: $x")
+    }.fold(_ => 1, _ => 0)
+  }
+} 
+```
+
+### Cats-Effect
+
+To use the Cats-Effect interface add the following dependency:
+
+```scala
+libraryDependencies += "io.github.vigoo" %% "clipp-cats-effect" % "0.3.0"
+```
+
+Example:
+```scala
+import io.github.vigoo.clipp._
+import io.github.vigoo.clipp.syntax._
+import io.github.vigoo.clipp.parsers._
+import io.github.vigoo.clipp.catseffect._
+
+object Test extends IOApp {
+    override def run(args: List[String]): IO[ExitCode] = {
+      val paramSpec = for {
+        _ <- metadata("zio-test")
+        x <- flag("test parameter", 'x')
+      } yield x
+
+      Clipp.parseOrDisplayUsageInfo(args, paramSpec) { x =>
+        IO(println(s"x was: $x"))
+      }.map(_ => ExitCode.Success)
+    }
+  }
+```

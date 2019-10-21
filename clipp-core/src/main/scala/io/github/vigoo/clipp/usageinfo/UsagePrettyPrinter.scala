@@ -8,7 +8,6 @@ import scala.annotation.tailrec
 import scala.collection.mutable
 
 object UsagePrettyPrinter {
-
   def prettyPrint(usageDescription: UsageDescription): String = {
     UsageInfo.generateUsageInfo(usageDescription) match {
       case Left(failure) =>
@@ -19,7 +18,7 @@ object UsagePrettyPrinter {
   }
 
   def prettyPrint(commandList: List[PrettyPrintCommand], optionalMetadata: Option[ParameterParserMetadata]): String = {
-    val builder = mutable.StringBuilder.newBuilder
+    val builder = new mutable.StringBuilder()
 
     optionalMetadata.foreach { metadata =>
       prettyPrintUsage(metadata, commandList, builder)
