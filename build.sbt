@@ -1,7 +1,6 @@
 import xerial.sbt.Sonatype._
 
 name := "clipp"
-organization := "io.github.vigoo"
 
 dynverSonatypeSnapshots in ThisBuild := true
 
@@ -15,6 +14,8 @@ lazy val commonSettings =
   Seq(
     scalaVersion := scala213,
     crossScalaVersions := List(scala212, scala213),
+
+    organization := "io.github.vigoo",
 
     addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.10.3"),
 
