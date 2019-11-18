@@ -74,7 +74,7 @@ lazy val zio = Project("clipp-zio", file("clipp-zio")).settings(commonSettings).
   description := "Clipp ZIO interface",
 
   libraryDependencies ++= Seq(
-    "dev.zio" %% "zio" % "1.0.0-RC16"
+    "dev.zio" %% "zio" % "1.0.0-RC17"
   )
 ).dependsOn(core)
 
