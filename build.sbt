@@ -25,7 +25,7 @@ lazy val commonSettings =
 
       "org.atnos" %% "eff" % "5.7.0",
 
-      "org.specs2" %% "specs2-core" % "4.8.3" % "test"
+      "org.specs2" %% "specs2-core" % "4.9.1" % "test"
     ),
 
     coverageEnabled in(Test, compile) := true,
