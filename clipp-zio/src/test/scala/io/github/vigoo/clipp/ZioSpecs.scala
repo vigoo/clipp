@@ -1,41 +1,36 @@
 package io.github.vigoo.clipp
 
-import org.specs2.mutable.Specification
 import _root_.zio._
+import _root_.zio.test._
+import _root_.zio.test.Assertion._
 
 import io.github.vigoo.clipp.parsers._
 import io.github.vigoo.clipp.syntax._
 
 import zio._
 
-class ZioSpecs extends Specification with DefaultRuntime {
+object ZioSpecs extends DefaultRunnableSpec {
 
-  "ZIO interface" should {
-    "successfully parse" in {
-      val result = unsafeRun {
-        val spec = flag("Test", 'x')
-        Clipp.parseOrFail[Boolean](List("-x"), spec)
-      }
+  def spec = suite("ZIO interface")(
+    testM("successfully parse") {
+      val spec = flag("Test", 'x')
+      for {
+        result <- Clipp.parseOrFail[Boolean](List("-x"), spec)
+      } yield assert(result)(isTrue)
+    },
 
-      result === true
+    testM("fail on bad spec") {
+      val spec = flag("Test", 'x')
+      for {
+        result <- Clipp.parseOrFail[Boolean](List("x"), spec).either
+      } yield assert(result)(isLeft(anything))
+    },
+
+    testM("fail or print succeeds") {
+      val spec = flag("Test", 'x')
+      for {
+        result <- Clipp.parseOrDisplayErrors(List("x"), spec) { _ => ZIO.unit }
+      } yield assert(result)(anything)
     }
-
-    "fail on bad spec" in {
-      val result = unsafeRun {
-        val spec = flag("Test", 'x')
-        Clipp.parseOrFail[Boolean](List("x"), spec).either
-      }
-
-      result should beLeft
-    }
-
-    "fail or print succeeds" in {
-      unsafeRun {
-        val spec = flag("Test", 'x')
-        Clipp.parseOrDisplayErrors(List("x"), spec) { _ => ZIO.unit }
-      }
-
-      ok
-    }
-  }
+  )
 }

@@ -24,8 +24,6 @@ lazy val commonSettings =
       "org.typelevel" %% "cats-free" % "2.1.1",
 
       "org.atnos" %% "eff" % "5.7.0",
-
-      "org.specs2" %% "specs2-core" % "4.9.2" % "test"
     ),
 
     coverageEnabled in(Test, compile) := true,
@@ -67,21 +65,30 @@ lazy val root = Project("clipp", file(".")).settings(commonSettings).settings(
 ) aggregate(core, zio, catsEffect)
 
 lazy val core = Project("clipp-core", file("clipp-core")).settings(commonSettings).settings(
-  description := "Clipp core"
+  description := "Clipp core",
+
+  libraryDependencies ++= Seq(
+    "org.specs2" %% "specs2-core" % "4.9.2" % "test"
+  )
 )
 
 lazy val zio = Project("clipp-zio", file("clipp-zio")).settings(commonSettings).settings(
   description := "Clipp ZIO interface",
 
   libraryDependencies ++= Seq(
-    "dev.zio" %% "zio" % "1.0.0-RC17"
-  )
+    "dev.zio" %% "zio" % "1.0.0-RC18-2",
+    "dev.zio" %% "zio-test" % "1.0.0-RC18-2" % Test,
+    "dev.zio" %% "zio-test-sbt" % "1.0.0-RC18-2" % Test
+  ),
+
+  testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework")
 ).dependsOn(core)
 
 lazy val catsEffect = Project("clipp-cats-effect", file("clipp-cats-effect")).settings(commonSettings).settings(
   description := "Clipp Cats-Effect interface",
 
   libraryDependencies ++= Seq(
-    "org.typelevel" %% "cats-effect" % "2.1.2"
+    "org.typelevel" %% "cats-effect" % "2.1.2",
+    "org.specs2" %% "specs2-core" % "4.9.2" % "test"
   )
 ).dependsOn(core)
