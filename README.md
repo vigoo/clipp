@@ -6,7 +6,7 @@
 Functional command line argument parser and usage info generator for Scala.
 
 ```scala
-libraryDependencies += "io.github.vigoo" %% "clipp-core" % "0.3.0"
+libraryDependencies += "io.github.vigoo" %% "clipp-core" % "0.3.1"
 ```
 
 ### The idea
@@ -161,7 +161,7 @@ connecting parameter parsing and error display together in a convenient way.
 To use the ZIO interface add the following dependency:
 
 ```scala
-libraryDependencies += "io.github.vigoo" %% "clipp-zio" % "0.3.0"
+libraryDependencies += "io.github.vigoo" %% "clipp-zio" % "0.3.1"
 ```
 
 Example:
@@ -192,7 +192,7 @@ object Test extends App {
 To use the Cats-Effect interface add the following dependency:
 
 ```scala
-libraryDependencies += "io.github.vigoo" %% "clipp-cats-effect" % "0.3.0"
+libraryDependencies += "io.github.vigoo" %% "clipp-cats-effect" % "0.3.1"
 ```
 
 Example:
