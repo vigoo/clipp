@@ -68,7 +68,7 @@ lazy val core = Project("clipp-core", file("clipp-core")).settings(commonSetting
   description := "Clipp core",
 
   libraryDependencies ++= Seq(
-    "org.specs2" %% "specs2-core" % "4.9.2" % "test"
+    "org.specs2" %% "specs2-core" % "4.9.3" % "test"
   )
 )
 
@@ -89,6 +89,6 @@ lazy val catsEffect = Project("clipp-cats-effect", file("clipp-cats-effect")).se
 
   libraryDependencies ++= Seq(
     "org.typelevel" %% "cats-effect" % "2.1.2",
-    "org.specs2" %% "specs2-core" % "4.9.2" % "test"
+    "org.specs2" %% "specs2-core" % "4.9.3" % "test"
   )
 ).dependsOn(core)
