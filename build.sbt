@@ -23,7 +23,7 @@ lazy val commonSettings =
       "org.typelevel" %% "cats-core" % "2.1.1",
       "org.typelevel" %% "cats-free" % "2.1.1",
 
-      "org.atnos" %% "eff" % "5.7.0",
+      "org.atnos" %% "eff" % "5.8.0",
     ),
 
     coverageEnabled in(Test, compile) := true,
