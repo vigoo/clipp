@@ -53,39 +53,39 @@ class ParserSpecs extends Specification {
 
   "CLI Parameter Parser" should {
     "be able to handle missing flags" in {
-      Parser.extractParameters(Array("-v", "--stack-traces"), specFlags) should beRight((true, false, true))
+      Parser.extractParameters(Seq("-v", "--stack-traces"), specFlags) should beRight((true, false, true))
     }
 
     "be able to parse flags in random order" in {
-      Parser.extractParameters(Array("--extract", "-S", "-v"), specFlags) should beRight((true, true, true))
+      Parser.extractParameters(Seq("--extract", "-S", "-v"), specFlags) should beRight((true, true, true))
     }
 
     "report undefined flags" in {
-      Parser.extractParameters(Array("--verbose", "-H", "--other"), specFlags) should failWithErrors(
+      Parser.extractParameters(Seq("--verbose", "-H", "--other"), specFlags) should failWithErrors(
         UnknownParameter("-H"), UnknownParameter("--other")
       )
     }
 
     "be able to find named parameters" in {
-      Parser.extractParameters(Array("--name", "somebody", "--password", "xxx"), specNamedParams) should beRight(
+      Parser.extractParameters(Seq("--name", "somebody", "--password", "xxx"), specNamedParams) should beRight(
         (false, "somebody", "xxx")
       )
     }
 
     "be able to find named parameters mixed with flags" in {
-      Parser.extractParameters(Array("--password", "xxx", "-v", "-u", "somebody"), specNamedParams) should beRight(
+      Parser.extractParameters(Seq("--password", "xxx", "-v", "-u", "somebody"), specNamedParams) should beRight(
         (true, "somebody", "xxx")
       )
     }
 
     "report only the missing parameters as missing" in {
-      Parser.extractParameters(Array("--password", "xxx", "-v", "-k"), specNamedParams) should failWithErrors(
+      Parser.extractParameters(Seq("--password", "xxx", "-v", "-k"), specNamedParams) should failWithErrors(
         MissingNamedParameter(Set("--username", "--name", "-u"))
       )
     }
 
     "simple parameters can be interleaved with others" in {
-      Parser.extractParameters(Array("-v", "/home/user/x.in", "--name", "test", "/home/user/x.out"), specMix) should beRight(
+      Parser.extractParameters(Seq("-v", "/home/user/x.in", "--name", "test", "/home/user/x.out"), specMix) should beRight(
         ("test", true, new File("/home/user/x.in").toPath, new File("/home/user/x.out").toPath)
       )
     }
@@ -96,11 +96,11 @@ class ParserSpecs extends Specification {
         nonRequired <- optional(namedParameter[String]("An optional parameter", "value", "optional"))
       } yield (required, nonRequired)
 
-      Parser.extractParameters(Array("--required", "x", "--optional", "y"), spec) should beRight(
+      Parser.extractParameters(Seq("--required", "x", "--optional", "y"), spec) should beRight(
         ("x", Some("y"))
       )
 
-      Parser.extractParameters(Array("--required", "x"), spec) should beRight(
+      Parser.extractParameters(Seq("--required", "x"), spec) should beRight(
         ("x", None)
       )
     }
@@ -111,11 +111,11 @@ class ParserSpecs extends Specification {
         nonRequired <- optional(parameter[String]("An optional parameter", "value"))
       } yield (required, nonRequired)
 
-      Parser.extractParameters(Array("x", "y"), spec) should beRight(
+      Parser.extractParameters(Seq("x", "y"), spec) should beRight(
         ("x", Some("y"))
       )
 
-      Parser.extractParameters(Array("x"), spec) should beRight(
+      Parser.extractParameters(Seq("x"), spec) should beRight(
         ("x", None)
       )
     }
@@ -131,41 +131,41 @@ class ParserSpecs extends Specification {
         }
       } yield (required, size)
 
-      Parser.extractParameters(Array("--required", "test", "-w", "10", "--height", "20"), spec) should beRight(
+      Parser.extractParameters(Seq("--required", "test", "-w", "10", "--height", "20"), spec) should beRight(
         ("test", Some((10, 20)))
       )
 
-      Parser.extractParameters(Array("--required", "test", "-w", "10"), spec) should failWithErrors(
+      Parser.extractParameters(Seq("--required", "test", "-w", "10"), spec) should failWithErrors(
         UnknownParameter("-w"), UnknownParameter("10")
       )
 
-      Parser.extractParameters(Array("--required", "test"), spec) should beRight(
+      Parser.extractParameters(Seq("--required", "test"), spec) should beRight(
         ("test", None)
       )
     }
 
     "accept valid command" in {
-      Parser.extractParameters(Array("first", "--name", "test", "--password", "xxx"), specCommand) should beRight(
+      Parser.extractParameters(Seq("first", "--name", "test", "--password", "xxx"), specCommand) should beRight(
         (false, Left(("test", "xxx")))
       )
 
-      Parser.extractParameters(Array("-v", "first", "--name", "test", "--password", "xxx"), specCommand) should beRight(
+      Parser.extractParameters(Seq("-v", "first", "--name", "test", "--password", "xxx"), specCommand) should beRight(
         (true, Left(("test", "xxx")))
       )
 
-      Parser.extractParameters(Array("-v", "second"), specCommand) should beRight(
+      Parser.extractParameters(Seq("-v", "second"), specCommand) should beRight(
         (true, Right(false))
       )
     }
 
     "refuse invalid command" in {
-      Parser.extractParameters(Array("third", "--name", "test", "--password", "xxx"), specCommand) should failWithErrors(
+      Parser.extractParameters(Seq("third", "--name", "test", "--password", "xxx"), specCommand) should failWithErrors(
         InvalidCommand("third", List("first", "second"))
       )
     }
 
     "does not accept parameters after command" in {
-      Parser.extractParameters(Array("first", "-v", "--name", "test", "--password", "xxx"), specCommand) should failWithErrors(
+      Parser.extractParameters(Seq("first", "-v", "--name", "test", "--password", "xxx"), specCommand) should failWithErrors(
         UnknownParameter("-v")
       )
     }

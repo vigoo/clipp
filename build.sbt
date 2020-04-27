@@ -23,7 +23,7 @@ lazy val commonSettings =
       "org.typelevel" %% "cats-core" % "2.1.1",
       "org.typelevel" %% "cats-free" % "2.1.1",
 
-      "org.atnos" %% "eff" % "5.7.0",
+      "org.atnos" %% "eff" % "5.8.0",
     ),
 
     coverageEnabled in(Test, compile) := true,
@@ -88,7 +88,7 @@ lazy val catsEffect = Project("clipp-cats-effect", file("clipp-cats-effect")).se
   description := "Clipp Cats-Effect interface",
 
   libraryDependencies ++= Seq(
-    "org.typelevel" %% "cats-effect" % "2.1.2",
-    "org.specs2" %% "specs2-core" % "4.9.2" % "test"
+    "org.typelevel" %% "cats-effect" % "2.1.3",
+    "org.specs2" %% "specs2-core" % "4.9.4" % "test"
   )
 ).dependsOn(core)
