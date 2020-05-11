@@ -1,5 +1,5 @@
 addSbtPlugin("org.scoverage" % "sbt-scoverage" % "1.6.1")
 addSbtPlugin("org.xerial.sbt" % "sbt-sonatype" % "3.9.2")
 addSbtPlugin("com.jsuereth" % "sbt-pgp" % "2.0.1")
-addSbtPlugin("ch.epfl.scala" % "sbt-bloop" % "1.3.5")
+addSbtPlugin("ch.epfl.scala" % "sbt-bloop" % "1.4.0")
 addSbtPlugin("com.dwijnand" % "sbt-dynver" % "4.0.0")
