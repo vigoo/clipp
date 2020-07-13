@@ -76,9 +76,9 @@ lazy val zio = Project("clipp-zio", file("clipp-zio")).settings(commonSettings).
   description := "Clipp ZIO interface",
 
   libraryDependencies ++= Seq(
-    "dev.zio" %% "zio" % "1.0.0-RC20",
-    "dev.zio" %% "zio-test" % "1.0.0-RC20" % Test,
-    "dev.zio" %% "zio-test-sbt" % "1.0.0-RC20" % Test
+    "dev.zio" %% "zio" % "1.0.0-RC21-2",
+    "dev.zio" %% "zio-test" % "1.0.0-RC21-2" % Test,
+    "dev.zio" %% "zio-test-sbt" % "1.0.0-RC21-2" % Test
   ),
 
   testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework")
@@ -88,7 +88,7 @@ lazy val catsEffect = Project("clipp-cats-effect", file("clipp-cats-effect")).se
   description := "Clipp Cats-Effect interface",
 
   libraryDependencies ++= Seq(
-    "org.typelevel" %% "cats-effect" % "2.1.3",
-    "org.specs2" %% "specs2-core" % "4.10.0" % "test"
+    "org.typelevel" %% "cats-effect" % "2.1.4",
+    "org.specs2" %% "specs2-core" % "4.9.4" % "test"
   )
 ).dependsOn(core)
