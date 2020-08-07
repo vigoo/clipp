@@ -6,7 +6,7 @@
 Functional command line argument parser and usage info generator for Scala.
 
 ```scala
-libraryDependencies += "io.github.vigoo" %% "clipp-core" % "0.3.1"
+libraryDependencies += "io.github.vigoo" %% "clipp-core" % "0.4.0"
 ```
 
 ### The idea
@@ -161,7 +161,7 @@ connecting parameter parsing and error display together in a convenient way.
 To use the ZIO interface add the following dependency:
 
 ```scala
-libraryDependencies += "io.github.vigoo" %% "clipp-zio" % "0.3.1"
+libraryDependencies += "io.github.vigoo" %% "clipp-zio" % "0.4.0"
 ```
 
 Example:
@@ -174,25 +174,29 @@ import io.github.vigoo.clipp.zioapi._
 import zio._
 
 object Test extends App {
-  override def run(args: List[String]): ZIO[ZEnv, Nothing, Int] = {
+  override def run(args: List[String]): URIO[zio.ZEnv, ExitCode] = {
     val paramSpec = for {
       _ <- metadata("zio-test")
       x <- flag("test parameter", 'x')
     } yield x
 
-    Clipp.parseOrDisplayUsageInfo(args, paramSpec) { x =>
-      console.putStrLn(s"x was: $x")
-    }.fold(_ => 1, _ => 0)
+    Clipp.parseOrDisplayUsageInfo(args, paramSpec, ExitCode.failed) { x =>
+      console.putStrLn(s"x was: $x").as(ExitCode.success)      
+    }
   }
 } 
 ```
+
+An alternative is to construct a `ZLayer` from the parameters:
+
+
 
 ### Cats-Effect
 
 To use the Cats-Effect interface add the following dependency:
 
 ```scala
-libraryDependencies += "io.github.vigoo" %% "clipp-cats-effect" % "0.3.1"
+libraryDependencies += "io.github.vigoo" %% "clipp-cats-effect" % "0.4.0"
 ```
 
 Example:

@@ -29,8 +29,15 @@ object ZioSpecs extends DefaultRunnableSpec {
     testM("fail or print succeeds") {
       val spec = flag("Test", 'x')
       for {
-        result <- Clipp.parseOrDisplayErrors(List("x"), spec) { _ => ZIO.unit }
+        result <- Clipp.parseOrDisplayErrors(List("x"), spec, ()) { _ => ZIO.unit }
       } yield assert(result)(anything)
+    },
+
+    testM("can be used with return values") {
+      val spec = flag("Test", 'x')
+      for {
+        result <- Clipp.parseOrDisplayErrors(List("-x"), spec, ExitCode.failure) { _ => ZIO.succeed(ExitCode.success) }
+      } yield assert(result)(equalTo(ExitCode.success))
     }
   )
 }
