@@ -34,7 +34,7 @@ class CatsEffectSpecs extends Specification {
     "fail or print succeeds" in {
       val test = {
         val spec = flag("Test", 'x')
-        Clipp.parseOrDisplayErrors(List("x"), spec) { _ => IO.unit }
+        Clipp.parseOrDisplayErrors(List("x"), spec, ()) { _ => IO.unit }
       }
 
       test.unsafeRunSync()

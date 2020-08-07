@@ -1,9 +1,9 @@
 package io.github.vigoo.clipp
 
-import _root_.zio.ZIO
-import _root_.zio.console._
+import zio.ZIO
+import zio.console.{Console, putStrLn}
 
-object zio {
+package object zioapi {
   type ClippEnv = Console
   type ClippZIO[A] = ZIO[ClippEnv, ParserFailure, A]
 

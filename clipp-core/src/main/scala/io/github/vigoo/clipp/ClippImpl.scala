@@ -23,7 +23,7 @@ trait ClippImpl[F[_]] {
   }
 
   def displayErrorsAndUsageInfo[T](spec: Free[Parameter, T])(failure: ParserFailure)
-                               (implicit cio: ClippIO[F]): F[Unit] = {
+                                  (implicit cio: ClippIO[F]): F[Unit] = {
     ClippIO[F].flatMap(ClippIO[F].showErrors(errors.display(failure.errors))) { _ =>
       val usageGraph = UsageInfoExtractor.getUsageDescription(spec, partialChoices = failure.partialChoices)
       val usage = UsagePrettyPrinter.prettyPrint(usageGraph)
@@ -31,17 +31,17 @@ trait ClippImpl[F[_]] {
     }
   }
 
-  def parseOrDisplayErrors[T](args: Seq[String], spec: Free[Parameter, T])
-                             (f: T => F[Unit])
-                             (implicit cio: ClippIO[F]): F[Unit] = {
+  def parseOrDisplayErrors[T, Res](args: Seq[String], spec: Free[Parameter, T], errorResult: Res)
+                                  (f: T => F[Res])
+                                  (implicit cio: ClippIO[F]): F[Res] = {
     ClippIO[F].recoverWith(
-      ClippIO[F].flatMap(parseOrFail(args, spec))(f))(displayErrors)
+      ClippIO[F].flatMap(parseOrFail(args, spec))(f))(failure => ClippIO[F].flatMap(displayErrors(failure))(_ => ClippIO[F].succeed(errorResult)))
   }
 
-  def parseOrDisplayUsageInfo[T](args: Seq[String], spec: Free[Parameter, T])
-                                (f: T => F[Unit])
-                                (implicit cio: ClippIO[F]): F[Unit] = {
+  def parseOrDisplayUsageInfo[T, Res](args: Seq[String], spec: Free[Parameter, T], errorResult: Res)
+                                     (f: T => F[Res])
+                                     (implicit cio: ClippIO[F]): F[Res] = {
     ClippIO[F].recoverWith(
-      ClippIO[F].flatMap(parseOrFail(args, spec))(f))(displayErrorsAndUsageInfo(spec))
+      ClippIO[F].flatMap(parseOrFail(args, spec))(f))(failure => ClippIO[F].flatMap(displayErrorsAndUsageInfo(spec)(failure))(_ => ClippIO[F].succeed(errorResult)))
   }
 }
