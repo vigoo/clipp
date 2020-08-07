@@ -1,13 +1,13 @@
 package io.github.vigoo.clipp
 
-import _root_.zio._
-import _root_.zio.test._
-import _root_.zio.test.Assertion._
-
+import zio._
+import zio.test._
+import zio.test.Assertion._
 import io.github.vigoo.clipp.parsers._
 import io.github.vigoo.clipp.syntax._
-
-import zioapi._
+import io.github.vigoo.clipp.zioapi._
+import io.github.vigoo.clipp.zioapi.config._
+import zio.console.Console
 
 object ZioSpecs extends DefaultRunnableSpec {
 
@@ -38,6 +38,15 @@ object ZioSpecs extends DefaultRunnableSpec {
       for {
         result <- Clipp.parseOrDisplayErrors(List("-x"), spec, ExitCode.failure) { _ => ZIO.succeed(ExitCode.success) }
       } yield assert(result)(equalTo(ExitCode.success))
+    },
+
+    testM("can provide as layer") {
+      val spec = flag("Test", 'x')
+      val config: ZLayer[Console, ParserFailure, ClippConfig[Boolean]] = fromArgsWithUsageInfo(List("-x"), spec)
+      val test: ZIO[ClippConfig[Boolean], Nothing, TestResult] =
+        parameters[Boolean].map(p => assert(p)(isTrue))
+
+      test.provideSomeLayer(config)
     }
   )
 }
