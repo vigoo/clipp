@@ -189,7 +189,32 @@ object Test extends App {
 
 An alternative is to construct a `ZLayer` from the parameters:
 
+```scala
+import io.github.vigoo.clipp._
+import io.github.vigoo.clipp.parsers._
+import io.github.vigoo.clipp.syntax._
+import io.github.vigoo.clipp.zioapi._
+import io.github.vigoo.clipp.zioapi.config
+```
 
+import zio._
+
+object Test extends App {
+  override def run(args: List[String]): URIO[zio.ZEnv, ExitCode] = {
+    val paramSpec = for {
+      _ <- metadata("zio-test")
+      x <- flag("test parameter", 'x')
+    } yield x
+
+    val clippConfig = config.fromArgsWithUsageInfo(args, spec)
+    val program = for {
+        x <- config.parameters[Boolean]
+        _ <- console.putStrLn(s"x was: $x")
+    } yield ExitCode.success
+    
+    program.catchAll { _: ParserFailure => ExitCode.failure }    
+  }
+} 
 
 ### Cats-Effect
 
