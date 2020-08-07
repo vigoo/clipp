@@ -7,7 +7,7 @@ import _root_.zio.test.Assertion._
 import io.github.vigoo.clipp.parsers._
 import io.github.vigoo.clipp.syntax._
 
-import zio._
+import zioapi._
 
 object ZioSpecs extends DefaultRunnableSpec {
 

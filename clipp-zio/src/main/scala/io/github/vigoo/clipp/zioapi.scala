@@ -3,7 +3,7 @@ package io.github.vigoo.clipp
 import _root_.zio.ZIO
 import _root_.zio.console._
 
-object zio {
+object zioapi {
   type ClippEnv = Console
   type ClippZIO[A] = ZIO[ClippEnv, ParserFailure, A]
 

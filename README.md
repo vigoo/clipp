@@ -169,7 +169,7 @@ Example:
 import io.github.vigoo.clipp._
 import io.github.vigoo.clipp.parsers._
 import io.github.vigoo.clipp.syntax._
-import io.github.vigoo.clipp.zio._
+import io.github.vigoo.clipp.zioapi._
 
 import zio._
 
