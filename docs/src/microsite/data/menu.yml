@@ -12,4 +12,4 @@ options:
   - title: ZIO
     url: docs/zio
   - title: API reference
-    url: latest/api/io/github/vigoo/clipp/
+    url: api/io/github/vigoo/clipp/
