@@ -1,0 +1,15 @@
+options:
+  - title: Home
+    url: index
+  - title: Getting started
+    url: docs/
+  - title: Usage info
+    url: docs/usageinfo
+  - title: Parsers
+    url: docs/parsers
+  - title: Cats Effect
+    url: docs/catseffect
+  - title: ZIO
+    url: docs/zio
+  - title: API reference
+    url: latest/api/io/github/vigoo/clipp/
