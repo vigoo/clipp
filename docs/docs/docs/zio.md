@@ -1,6 +1,6 @@
 ---
 layout: docs
-title: Cats Effect
+title: ZIO
 ---
 
 # Using with ZIO
