@@ -3,7 +3,7 @@ package io.github.vigoo.clipp
 import cats.data._
 import cats.free.Free
 import cats._
-import cats.implicits._
+import cats.syntax.all._
 import io.github.vigoo.clipp.choices.{ArbitraryChoice, BooleanChoice, Choices, CommandChoice}
 import io.github.vigoo.clipp.errors._
 

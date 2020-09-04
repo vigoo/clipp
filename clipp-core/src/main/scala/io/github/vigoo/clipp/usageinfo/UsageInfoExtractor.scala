@@ -6,7 +6,6 @@ import cats.data.{State, Writer}
 import cats.free.Free
 import cats.kernel.Monoid
 import cats._
-import cats.implicits._
 import io.github.vigoo.clipp._
 import io.github.vigoo.clipp.choices._
 import org.atnos.eff._
