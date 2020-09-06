@@ -3,7 +3,7 @@ package io.github.vigoo.clipp
 import cats.data._
 import cats.free.Free
 import cats._
-import cats.implicits._
+import cats.syntax.all._
 import io.github.vigoo.clipp.choices.{ArbitraryChoice, BooleanChoice, Choices, CommandChoice}
 import io.github.vigoo.clipp.errors._
 
@@ -28,7 +28,7 @@ object Parser {
 
   private val commandLocator: Parameter ~> CommandLocatorM = new (Parameter ~> CommandLocatorM) {
     private def lift[A](f: ExtractStateM[A]): CommandLocatorM[A] =
-      WriterT.liftF[ExtractStateM, List[CommandLocation], A](f)(catsKernelStdMonoidForList[CommandLocation], implicitly)
+      WriterT.liftF[ExtractStateM, List[CommandLocation], A](f)
 
     private def tell(commandLocation: CommandLocation): CommandLocatorM[Unit] =
       WriterT.tell(List(commandLocation))
