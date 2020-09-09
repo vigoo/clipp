@@ -42,7 +42,6 @@ lazy val commonSettings =
 
     licenses := Seq("APL2" -> url("http://www.apache.org/licenses/LICENSE-2.0.txt")),
 
-    publishTo := sonatypePublishToBundle.value,
     sonatypeProjectHosting := Some(GitHubHosting("vigoo", "clipp", "daniel.vigovszky@gmail.com")),
 
     developers := List(
