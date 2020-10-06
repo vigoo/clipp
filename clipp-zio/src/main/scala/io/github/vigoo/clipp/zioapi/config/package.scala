@@ -22,7 +22,7 @@ package object config {
       .map { p =>
         new ClippConfig.Service[T] {
           override val parameters: T = p
-        }
+        } : ClippConfig.Service[T]
       }
       .toLayer
 
