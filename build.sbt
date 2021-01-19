@@ -89,7 +89,7 @@ lazy val catsEffect = Project("clipp-cats-effect", file("clipp-cats-effect")).se
 
   libraryDependencies ++= Seq(
     "org.typelevel" %% "cats-effect" % "2.3.1",
-    "org.specs2" %% "specs2-core" % "4.10.5" % "test"
+    "org.specs2" %% "specs2-core" % "4.10.6" % "test"
   )
 ).dependsOn(core)
 
