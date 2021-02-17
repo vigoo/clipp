@@ -21,8 +21,8 @@ lazy val commonSettings =
     addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.10.3"),
 
     libraryDependencies ++= Seq(
-      "org.typelevel" %% "cats-core" % "2.4.1",
-      "org.typelevel" %% "cats-free" % "2.4.1",
+      "org.typelevel" %% "cats-core" % "2.4.2",
+      "org.typelevel" %% "cats-free" % "2.4.2",
 
       "org.atnos" %% "eff" % "5.14.0",
     ),
