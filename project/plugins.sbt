@@ -1,5 +1,5 @@
 addSbtPlugin("org.scoverage" % "sbt-scoverage" % "1.6.1")
-addSbtPlugin("ch.epfl.scala" % "sbt-bloop" % "1.4.7")
+addSbtPlugin("ch.epfl.scala" % "sbt-bloop" % "1.4.8")
 addSbtPlugin("com.47deg" % "sbt-microsites" % "1.3.2")
 addSbtPlugin("org.scalameta" % "sbt-mdoc" % "2.2.18")
 addSbtPlugin("com.typesafe.sbt" % "sbt-ghpages" % "0.6.3")
