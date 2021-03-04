@@ -49,6 +49,8 @@ object UsageInfoExtractor {
         impl.optional(parameter)
       case SetMetadata(metadata) =>
         impl.setMetadata(metadata)
+      case Fail(message) =>
+        impl.fail(message)
     }
   }
 
@@ -167,6 +169,9 @@ object UsageInfoExtractor {
         _ <- put[UsageInfoExtractor, ExtractUsageInfoState](state.copy(metadata = Some(metadata)))
       } yield ()
     }
+
+    def fail[T](message: String): UsageInfoM[T] =
+      choose.zero
   }
 
 }

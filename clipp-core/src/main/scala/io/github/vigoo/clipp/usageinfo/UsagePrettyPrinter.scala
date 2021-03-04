@@ -71,6 +71,8 @@ object UsagePrettyPrinter {
               throw new IllegalStateException(s"Optionals should have been prefiltered")
             case _: SetMetadata =>
               throw new IllegalStateException(s"SetMetadata should have been prefiltered")
+            case _: Fail[_] =>
+              throw new IllegalStateException(s"Fail should have been prefiltered")
           }
 
         val values = choices.toList.sorted.map(_.value).mkString(", ")
@@ -108,6 +110,9 @@ object UsagePrettyPrinter {
 
           case _: SetMetadata =>
             throw new IllegalStateException(s"SetMetadata should have been prefiltered")
+
+          case _: Fail[_] =>
+            throw new IllegalStateException(s"Fail should have been prefiltered")
         }
         prettyPrint(remaining, level, builder)
       case PrintChoice(choice) :: remaining =>
@@ -177,6 +182,8 @@ object UsagePrettyPrinter {
                 throw new IllegalStateException(s"Optionals should have been prefiltered")
               case _: SetMetadata =>
                 throw new IllegalStateException(s"SetMetadata should have been prefiltered")
+              case _: Fail[_] =>
+                throw new IllegalStateException(s"Fail should have been prefiltered")
             }
           }
 

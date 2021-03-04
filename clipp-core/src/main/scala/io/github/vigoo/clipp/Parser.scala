@@ -49,6 +49,8 @@ object Parser {
         lift(impl.optional(parameter))
       case SetMetadata(metadata) =>
         lift(impl.setMetadata(metadata))
+      case Fail(message) =>
+        lift(impl.fail(message))
     }
   }
 
@@ -66,6 +68,8 @@ object Parser {
         impl.optional(parameter)
       case SetMetadata(metadata) =>
         impl.setMetadata(metadata)
+      case Fail(message) =>
+        impl.fail(message)
     }
   }
 
@@ -280,5 +284,8 @@ object Parser {
 
     def setMetadata(metadata: ParameterParserMetadata): ExtractStateM[Unit] =
       pure(())
+
+    def fail[T](message: String): ExtractStateM[T] =
+      failWith(CustomError(message))
   }
 }

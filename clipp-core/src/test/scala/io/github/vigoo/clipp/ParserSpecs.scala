@@ -51,6 +51,15 @@ class ParserSpecs extends Specification {
     }
   } yield (verbose, result)
 
+  private val specCustomFailure = for {
+    _ <- metadata("test")
+    name <- optional(namedParameter[String]("User name", "name", 'u', "name", "username"))
+    result <- name match {
+      case Some(value) => pure(value)
+      case None => fail[String]("name was not defined")
+    }
+  } yield result
+
   "CLI Parameter Parser" should {
     "be able to handle missing flags" in {
       Parser.extractParameters(Seq("-v", "--stack-traces"), specFlags) should beRight((true, false, true))
@@ -167,6 +176,16 @@ class ParserSpecs extends Specification {
     "does not accept parameters after command" in {
       Parser.extractParameters(Seq("first", "-v", "--name", "test", "--password", "xxx"), specCommand) should failWithErrors(
         UnknownParameter("-v")
+      )
+    }
+
+    "custom failure with valid input" in {
+      Parser.extractParameters(Seq("--name", "test"), specCustomFailure) should beRight("test")
+    }
+
+    "custom failure with invalid input" in {
+      Parser.extractParameters(Seq.empty, specCustomFailure) should failWithErrors(
+        CustomError("name was not defined")
       )
     }
   }

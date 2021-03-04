@@ -203,6 +203,23 @@ class UsageInfoSpecs extends Specification {
         beExitBranch,
       )
     }
+
+    "custom failures does not break the usage info generator" in {
+      val spec = for {
+        _ <- metadata("test")
+        name <- namedParameter[String]("User name", "name", 'u', "name", "username")
+        _ <- if (name.length > 16) fail("User name too long") else pure(())
+        flag <- flag("Verbose", 'v')
+      } yield (name, flag)
+
+      val graph = UsageInfoExtractor.getUsageDescription(spec)
+      val usageInfo = UsageInfo.generateUsageInfo(graph)
+
+      usageInfo should beSequenceOf(
+        bePrintNodeOf(NamedParameter(Some('u'), Set("name", "username"), "name", "User name", None, implicitly[ParameterParser[String]])),
+        bePrintNodeOf(Flag(Some('v'), Set.empty, "Verbose", None)),
+      )
+    }
   }
 
   private def beSequenceOf(nodes: Matcher[PrettyPrintCommand]*): Matcher[Either[String, Vector[PrettyPrintCommand]]] = (result: Either[String, Vector[PrettyPrintCommand]]) => {
