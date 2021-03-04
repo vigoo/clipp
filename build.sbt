@@ -6,7 +6,7 @@ name := "clipp"
 dynverSonatypeSnapshots in ThisBuild := true
 
 val scala212 = "2.12.13"
-val scala213 = "2.13.3"
+val scala213 = "2.13.5"
 
 val scalacOptions212 = Seq("-Ypartial-unification", "-deprecation")
 val scalacOptions213 = Seq("-deprecation")
