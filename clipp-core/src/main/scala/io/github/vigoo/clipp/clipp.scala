@@ -69,6 +69,12 @@ case class SetMetadata(metadata: ParameterParserMetadata)
   override def toString: String = s"set metadata"
 }
 
+case class Fail[T](message: String)
+  extends Parameter[T] {
+
+  override def toString: String = s"fail with $message"
+}
+
 object choices {
 
   sealed trait Choice {
@@ -135,6 +141,8 @@ object errors {
 
   case class CommandPositionIsNotStatic(validCommands: List[String]) extends ParserError
 
+  case class CustomError(message: String) extends ParserError
+
   def display(errors: NonEmptyList[ParserError]): String = {
     if (errors.length == 1) {
       display(errors.head)
@@ -153,6 +161,7 @@ object errors {
       case InvalidCommand(command, validCommands) => s"Invalid command $command. Valid commands: ${validCommands.mkString(", ")}"
       case FailedToParseValue(message, value) => s"Failed to parse value $value: $message"
       case CommandPositionIsNotStatic(validCommands) => s"Command position is not static. Valid commands: ${validCommands.mkString(", ")}"
+      case CustomError(message) => message
     }
 }
 
@@ -252,4 +261,7 @@ object syntax {
 
   def pure[T](value: T): Free[Parameter, T] =
     Free.pure(value)
+
+  def fail[T](message: String): Free[Parameter, T] =
+    liftF[Parameter, T](Fail(message))
 }
