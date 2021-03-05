@@ -40,9 +40,9 @@ object UsageInfoExtractor {
       case flag: Flag =>
         impl.flag(flag)
       case namedParameter: NamedParameter[_] =>
-        impl.namedParameter(namedParameter, namedParameter.parameterParser.default)
+        impl.namedParameter(namedParameter, namedParameter.parameterParser.example)
       case simpleParameter: SimpleParameter[_] =>
-        impl.simpleParameter(simpleParameter, simpleParameter.parameterParser.default)
+        impl.simpleParameter(simpleParameter, simpleParameter.parameterParser.example)
       case command: Command =>
         impl.command(command)
       case Optional(parameter) =>

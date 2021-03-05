@@ -11,9 +11,26 @@ import io.github.vigoo.clipp.errors.ParserError
 import scala.util.Try
 
 
+/**
+ * Type class for parsing a command line argument to type T
+ * @tparam T
+ */
 trait ParameterParser[T] {
+  /**
+   * Parse the command line argument into type T or fail with an error message
+   * @param value command line argument
+   * @return Either failure or the parsed value
+   */
   def parse(value: String): Either[String, T]
-  def default: T
+
+  /**
+   * An example of the parsed value, used by the usage graph generator to simulate
+   * the execution of the parser.
+   *
+   * It is never used as a result of the parser when it is executed on
+   * real input.
+   */
+  def example: T
 }
 
 case class ParameterParserMetadata(programName: String, description: Option[String])
@@ -171,25 +188,25 @@ object parsers {
   implicit val stringParameterParser: ParameterParser[String] = new ParameterParser[String] {
     override def parse(value: String): Either[String, String] = Right(value)
 
-    override def default: String = ""
+    override def example: String = ""
   }
 
   implicit val intParameterParser: ParameterParser[Int] = new ParameterParser[Int] {
     override def parse(value: String): Either[String, Int] = Try(value.toInt).toEither.left.map(_.getMessage)
 
-    override def default: Int = 0
+    override def example: Int = 0
   }
 
   implicit val doubleParameterParser: ParameterParser[Double] = new ParameterParser[Double] {
     override def parse(value: String): Either[String, Double] = Try(value.toDouble).toEither.left.map(_.getMessage)
 
-    override def default: Double = 0.0
+    override def example: Double = 0.0
   }
 
   implicit val fileParameterParser: ParameterParser[File] = new ParameterParser[File] {
     override def parse(value: String): Either[String, File] = Right(new File(value))
 
-    override def default: File = new File("x")
+    override def example: File = new File("x")
   }
 }
 
