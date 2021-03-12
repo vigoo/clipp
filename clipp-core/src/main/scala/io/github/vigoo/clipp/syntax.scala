@@ -57,19 +57,29 @@ trait syntax {
                                     withDocumentedChoices: List[T]): Parameter.Spec[T] =
     liftF(SimpleParameter(placeholder, description, Some(withDocumentedChoices), implicitly))
 
-  def command(validValues: String*): Free[Parameter, String] =
+  def command(validValues: String*): Parameter.Spec[String] =
     liftF(Command(validValues.toList, None))
 
-  def command(validValues: List[String], withDocumentedChoices: List[String]): Free[Parameter, String] =
+  def command(validValues: List[String], withDocumentedChoices: List[String]): Parameter.Spec[String] =
     liftF(Command(validValues, Some(withDocumentedChoices)))
 
-  def optional[T](parameter: Parameter.Spec[T]): Free[Parameter, Option[T]] =
+  def optional[T](parameter: Parameter.Spec[T]): Parameter.Spec[Option[T]] =
     liftF[Parameter, Option[T]](Optional(parameter))
 
-  def metadata(programName: String): Free[Parameter, Unit] =
+  def repeated[T](parameter: Parameter.Spec[T]): Parameter.Spec[List[T]] = {
+    def go(acc: List[T]): Parameter.Spec[List[T]] =
+      optional(parameter).flatMap {
+        case None => pure(acc.reverse)
+        case Some(item) => go(item :: acc)
+      }
+
+    go(List.empty)
+  }
+
+  def metadata(programName: String): Parameter.Spec[Unit] =
     liftF[Parameter, Unit](SetMetadata(ParameterParserMetadata(programName, None)))
 
-  def metadata(programName: String, description: String): Free[Parameter, Unit] =
+  def metadata(programName: String, description: String): Parameter.Spec[Unit] =
     liftF[Parameter, Unit](SetMetadata(ParameterParserMetadata(programName, Some(description))))
 
   def pure[T](value: T): Parameter.Spec[T] =

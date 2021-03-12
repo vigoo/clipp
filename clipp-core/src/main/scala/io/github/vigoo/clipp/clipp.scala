@@ -8,11 +8,13 @@ import io.github.vigoo.clipp.errors.ParserError
 
 /**
  * Type class for parsing a command line argument to type T
+ *
  * @tparam T
  */
 trait ParameterParser[T] {
   /**
    * Parse the command line argument into type T or fail with an error message
+   *
    * @param value command line argument
    * @return Either failure or the parsed value
    */

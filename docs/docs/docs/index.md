@@ -168,6 +168,7 @@ The semantics of these parsing commands are the following:
 - `namedParameter[T]` looks for a `--name value` pair of arguments *before the first command location* (if any), **removes both** from the list of arguments and parses the value with an instance of the `ParameterParser` type class
 - `parameter[T]` takes the first argument that does not start with `-` *before the first command location* (if any) and **removes it from the list of arguments, then parses the value with an instance of the `ParameterParser` type class
 - `optional` makes parser specification section optional
+- `repeated` repeates a parser specification until it fails and collects the results as a list. 
 - `command` is a special parameter with a fix set of values, which is parsed by taking the first argument that does not start with `-` and **it drops all the arguments until the command** from the list of arguments.
 
 The semantics of `command` strongly influences the set of CLI interfaces parseable by this library, but it is
