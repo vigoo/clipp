@@ -25,36 +25,36 @@ trait syntax {
   def namedParameter[T: ParameterParser](description: String,
                                          placeholder: String,
                                          shortName: Char,
-                                         longNames: String*): Free[Parameter, T] =
+                                         longNames: String*): Parameter.Spec[T] =
     liftF(NamedParameter(Some(shortName), longNames.toSet, placeholder, description, None, implicitly))
 
   def namedParameter[T: ParameterParser](description: String,
                                          placeholder: String,
                                          shortName: Char,
                                          longNames: List[String],
-                                         withDocumentedChoices: List[T]): Free[Parameter, T] =
+                                         withDocumentedChoices: List[T]): Parameter.Spec[T] =
     liftF(NamedParameter(Some(shortName), longNames.toSet, placeholder, description, Some(withDocumentedChoices), implicitly))
 
   def namedParameter[T: ParameterParser](description: String,
                                          placeholder: String,
                                          longName: String,
-                                         otherLongNames: String*): Free[Parameter, T] =
+                                         otherLongNames: String*): Parameter.Spec[T] =
     liftF(NamedParameter(None, otherLongNames.toSet + longName, placeholder, description, None, implicitly))
 
   def namedParameter[T: ParameterParser](description: String,
                                          placeholder: String,
                                          longName: String,
                                          otherLongNames: List[String],
-                                         withDocumentedChoices: List[T]): Free[Parameter, T] =
+                                         withDocumentedChoices: List[T]): Parameter.Spec[T] =
     liftF(NamedParameter(None, otherLongNames.toSet + longName, placeholder, description, Some(withDocumentedChoices), implicitly))
 
   def parameter[T: ParameterParser](description: String,
-                                    placeholder: String): Free[Parameter, T] =
+                                    placeholder: String): Parameter.Spec[T] =
     liftF(SimpleParameter(placeholder, description, None, implicitly))
 
   def parameter[T: ParameterParser](description: String,
                                     placeholder: String,
-                                    withDocumentedChoices: List[T]): Free[Parameter, T] =
+                                    withDocumentedChoices: List[T]): Parameter.Spec[T] =
     liftF(SimpleParameter(placeholder, description, Some(withDocumentedChoices), implicitly))
 
   def command(validValues: String*): Free[Parameter, String] =
@@ -63,7 +63,7 @@ trait syntax {
   def command(validValues: List[String], withDocumentedChoices: List[String]): Free[Parameter, String] =
     liftF(Command(validValues, Some(withDocumentedChoices)))
 
-  def optional[T](parameter: Free[Parameter, T]): Free[Parameter, Option[T]] =
+  def optional[T](parameter: Parameter.Spec[T]): Free[Parameter, Option[T]] =
     liftF[Parameter, Option[T]](Optional(parameter))
 
   def metadata(programName: String): Free[Parameter, Unit] =
@@ -72,28 +72,28 @@ trait syntax {
   def metadata(programName: String, description: String): Free[Parameter, Unit] =
     liftF[Parameter, Unit](SetMetadata(ParameterParserMetadata(programName, Some(description))))
 
-  def pure[T](value: T): Free[Parameter, T] =
+  def pure[T](value: T): Parameter.Spec[T] =
     Free.pure(value)
 
-  def fail[E : CustomParserError, T](failure: E): Free[Parameter, T] =
+  def fail[E : CustomParserError, T](failure: E): Parameter.Spec[T] =
     liftF[Parameter, T](Fail(CustomParserError.toMessage(failure)))
 
-  def liftEither[E: CustomParserError, T](description: String, examples: NonEmptyList[T])(f: => Either[E, T]): Free[Parameter, T] =
+  def liftEither[E: CustomParserError, T](description: String, examples: NonEmptyList[T])(f: => Either[E, T]): Parameter.Spec[T] =
     liftF[Parameter, T](Lift(() => f.left.map(CustomParserError.toMessage[E]), description, examples))
 
-  def liftEither[E: CustomParserError, T](description: String, example: T)(f: => Either[E, T]): Free[Parameter, T] =
+  def liftEither[E: CustomParserError, T](description: String, example: T)(f: => Either[E, T]): Parameter.Spec[T] =
     liftF[Parameter, T](Lift(() => f.left.map(CustomParserError.toMessage[E]), description, NonEmptyList.one(example)))
 
-  def liftTry[T](description: String, examples: NonEmptyList[T])(f: => Try[T]): Free[Parameter, T] =
+  def liftTry[T](description: String, examples: NonEmptyList[T])(f: => Try[T]): Parameter.Spec[T] =
     liftEither(description, examples)(f.toEither)
 
-  def liftTry[T](description: String, example: T)(f: => Try[T]): Free[Parameter, T] =
+  def liftTry[T](description: String, example: T)(f: => Try[T]): Parameter.Spec[T] =
     liftEither(description, example)(f.toEither)
 
-  def lift[T](description: String, examples: NonEmptyList[T])(f: => T): Free[Parameter, T] =
+  def lift[T](description: String, examples: NonEmptyList[T])(f: => T): Parameter.Spec[T] =
     liftTry(description, examples)(Try(f))
 
-  def lift[T](description: String, example: T)(f: => T): Free[Parameter, T] =
+  def lift[T](description: String, example: T)(f: => T): Parameter.Spec[T] =
     liftTry(description, example)(Try(f))
 }
 

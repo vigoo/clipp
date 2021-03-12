@@ -31,22 +31,22 @@ package object zioapi {
 
   object Clipp extends ClippImpl[ClippZIO]
 
-  def liftZIO[R, E, T](description: String, examples: NonEmptyList[T])(f: ZIO[R, E, T])(implicit runtime: Runtime[R], ev: CanFail[E], customParserError: CustomParserError[E]): Free[Parameter, T] =
+  def liftZIO[R, E, T](description: String, examples: NonEmptyList[T])(f: ZIO[R, E, T])(implicit runtime: Runtime[R], ev: CanFail[E], customParserError: CustomParserError[E]): Parameter.Spec[T] =
     syntax.liftEither(description, examples) {
       runtime.unsafeRun(f.either)
     }
 
-  def liftZIO[R, E, T](description: String, example: T)(f: ZIO[R, E, T])(implicit runtime: Runtime[R], ev: CanFail[E], customParserError: CustomParserError[E]): Free[Parameter, T] =
+  def liftZIO[R, E, T](description: String, example: T)(f: ZIO[R, E, T])(implicit runtime: Runtime[R], ev: CanFail[E], customParserError: CustomParserError[E]): Parameter.Spec[T] =
     syntax.liftEither(description, example) {
       runtime.unsafeRun(f.either)
     }
 
-  def liftURIO[R, T](description: String, examples: NonEmptyList[T])(f: URIO[R, T])(implicit runtime: Runtime[R]): Free[Parameter, T] =
+  def liftURIO[R, T](description: String, examples: NonEmptyList[T])(f: URIO[R, T])(implicit runtime: Runtime[R]): Parameter.Spec[T] =
     syntax.lift(description, examples) {
       runtime.unsafeRun(f)
     }
 
-  def liftURIO[R, T](description: String, example: T)(f: URIO[R, T])(implicit runtime: Runtime[R]): Free[Parameter, T] =
+  def liftURIO[R, T](description: String, example: T)(f: URIO[R, T])(implicit runtime: Runtime[R]): Parameter.Spec[T] =
     syntax.lift(description, example) {
       runtime.unsafeRun(f)
     }
@@ -54,24 +54,24 @@ package object zioapi {
   case class ZioDSL[R](runtime: Runtime[R]) extends syntax {
     private implicit val r: Runtime[R] = runtime
 
-    def liftZIO[E, T](description: String, examples: NonEmptyList[T])(f: ZIO[R, E, T])(implicit ev: CanFail[E], customParserError: CustomParserError[E]): Free[Parameter, T] =
+    def liftZIO[E, T](description: String, examples: NonEmptyList[T])(f: ZIO[R, E, T])(implicit ev: CanFail[E], customParserError: CustomParserError[E]): Parameter.Spec[T] =
       zioapi.liftZIO[R, E, T](description, examples)(f)
 
-    def liftZIO[E, T](description: String, example: T)(f: ZIO[R, E, T])(implicit ev: CanFail[E], customParserError: CustomParserError[E]): Free[Parameter, T] =
+    def liftZIO[E, T](description: String, example: T)(f: ZIO[R, E, T])(implicit ev: CanFail[E], customParserError: CustomParserError[E]): Parameter.Spec[T] =
       zioapi.liftZIO[R, E, T](description, example)(f)
 
-    def liftURIO[T](description: String, examples: NonEmptyList[T])(f: URIO[R, T]): Free[Parameter, T] =
+    def liftURIO[T](description: String, examples: NonEmptyList[T])(f: URIO[R, T]): Parameter.Spec[T] =
       zioapi.liftURIO[R, T](description, examples)(f)
 
-    def liftURIO[T](description: String, example: T)(f: URIO[R, T]): Free[Parameter, T] =
+    def liftURIO[T](description: String, example: T)(f: URIO[R, T]): Parameter.Spec[T] =
       zioapi.liftURIO[R, T](description, example)(f)
   }
 
-  def parametersFromArgs[T : Tag](args: List[String], spec: Free[Parameter, T]): ZLayer[Console, ParserFailure, Has[T]] =
+  def parametersFromArgs[T : Tag](args: List[String], spec: Parameter.Spec[T]): ZLayer[Console, ParserFailure, Has[T]] =
     Clipp.parseOrFail(args, spec)
       .toLayer
 
-  def effectfulParametersFromArgs[R, T : Tag](args: List[String])(createSpec: ZioDSL[R] => Free[Parameter, T]): ZLayer[Console with R, ParserFailure, Has[T]] = {
+  def effectfulParametersFromArgs[R, T : Tag](args: List[String])(createSpec: ZioDSL[R] => Parameter.Spec[T]): ZLayer[Console with R, ParserFailure, Has[T]] = {
     for {
       runtime <- ZIO.runtime[R]
       spec = createSpec(ZioDSL(runtime))
@@ -85,7 +85,7 @@ package object zioapi {
         Clipp.displayErrorsAndUsageInfo(parserFailure)
       }
   }
-  def parametersFromArgsWithUsageInfo[T : Tag](args: List[String], spec: Free[Parameter, T]): ZLayer[Console, ParserFailure, Has[T]] =
+  def parametersFromArgsWithUsageInfo[T : Tag](args: List[String], spec: Parameter.Spec[T]): ZLayer[Console, ParserFailure, Has[T]] =
     parametersFromArgs(args, spec)
       .tapError { parserFailure: ParserFailure =>
         Clipp.displayErrorsAndUsageInfo(parserFailure)

@@ -6,7 +6,7 @@ import io.github.vigoo.clipp.usageinfo.{UsageInfoExtractor, UsagePrettyPrinter}
 import scala.language.higherKinds
 
 trait ClippImpl[F[_]] {
-  def parseOrFail[T](args: Seq[String], spec: Free[Parameter, T])
+  def parseOrFail[T](args: Seq[String], spec: Parameter.Spec[T])
                     (implicit cio: ClippIO[F]): F[T] = {
     Parser.extractParameters(args, spec) match {
       case Left(parserFailure) =>
@@ -30,14 +30,14 @@ trait ClippImpl[F[_]] {
     }
   }
 
-  def parseOrDisplayErrors[T, Res](args: Seq[String], spec: Free[Parameter, T], errorResult: Res)
+  def parseOrDisplayErrors[T, Res](args: Seq[String], spec: Parameter.Spec[T], errorResult: Res)
                                   (f: T => F[Res])
                                   (implicit cio: ClippIO[F]): F[Res] = {
     ClippIO[F].recoverWith(
       ClippIO[F].flatMap(parseOrFail(args, spec))(f))(failure => ClippIO[F].flatMap(displayErrors(failure))(_ => ClippIO[F].succeed(errorResult)))
   }
 
-  def parseOrDisplayUsageInfo[T, Res](args: Seq[String], spec: Free[Parameter, T], errorResult: Res)
+  def parseOrDisplayUsageInfo[T, Res](args: Seq[String], spec: Parameter.Spec[T], errorResult: Res)
                                      (f: T => F[Res])
                                      (implicit cio: ClippIO[F]): F[Res] = {
     ClippIO[F].recoverWith(

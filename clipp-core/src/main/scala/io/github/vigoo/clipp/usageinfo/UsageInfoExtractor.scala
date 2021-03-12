@@ -55,7 +55,7 @@ object UsageInfoExtractor {
     }
   }
 
-  def getUsageDescription[T](by: Free[Parameter, T], partialChoices: Choices = Map.empty): UsageDescription = {
+  def getUsageDescription[T](by: Parameter.Spec[T], partialChoices: Choices = Map.empty): UsageDescription = {
 
     val initialState = ExtractUsageInfoState(
       isInOptionalBlock = false,
@@ -148,7 +148,7 @@ object UsageInfoExtractor {
       } yield choice
     }
 
-    def optional[T](block: Free[Parameter, T]): UsageInfoM[Option[T]] = {
+    def optional[T](block: Parameter.Spec[T]): UsageInfoM[Option[T]] = {
       getState.flatMap { state =>
         val extractor = block.foldMap(usageInfoExtractor)
         val (extractorResult, finalState): (List[(T, List[ResultGraph])], ExtractUsageInfoState) =

@@ -30,7 +30,6 @@ trait ParameterParser[T] {
 
 case class ParameterParserMetadata(programName: String, description: Option[String])
 
-
 sealed trait Parameter[T]
 
 case class Flag(shortName: Option[Char],
@@ -69,7 +68,7 @@ case class Command(validCommands: List[String],
   override def toString: String = s"command ($validCommands)"
 }
 
-case class Optional[T](parameter: Free[Parameter, T])
+case class Optional[T](parameter: Parameter.Spec[T])
   extends Parameter[Option[T]] {
 
   override def toString: String = s"optional $parameter"
@@ -91,6 +90,10 @@ case class Lift[T](f: () => Either[String, T], description: String, examples: No
   extends Parameter[T] {
 
   override def toString: String = description
+}
+
+object Parameter {
+  type Spec[T] = Free[Parameter, T]
 }
 
 case class ParserFailure(errors: NonEmptyList[ParserError], partialChoices: Choices, spec: Free[Parameter, _])

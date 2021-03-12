@@ -77,7 +77,7 @@ object Parser {
     }
   }
 
-  def extractParameters[T](from: Seq[String], by: Free[Parameter, T]): Either[ParserFailure, T] = {
+  def extractParameters[T](from: Seq[String], by: Parameter.Spec[T]): Either[ParserFailure, T] = {
     val initialState = ExtractParametersState(
       nonParsedArguments = from.toVector.zipWithIndex.map { case (v, i) => PositionedParameter(i, v) },
       remainingCommandPositions = List.empty,
@@ -269,7 +269,7 @@ object Parser {
       } yield result
     }
 
-    def optional[T](parameter: Free[Parameter, T]): ExtractStateM[Option[T]] = {
+    def optional[T](parameter: Parameter.Spec[T]): ExtractStateM[Option[T]] = {
       for {
         state <- getState
         (resultState, result) = parameter.foldMap(parameterExtractor).value.run(state).value
