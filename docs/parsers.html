@@ -4,7 +4,7 @@ which has the following definition:</p>
 
 <div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">trait</span> <span class="nc">ParameterParser</span><span class="o">[</span><span class="kt">T</span><span class="o">]</span> <span class="o">{</span>
   <span class="k">def</span> <span class="nf">parse</span><span class="o">(</span><span class="n">value</span><span class="k">:</span> <span class="kt">String</span><span class="o">)</span><span class="k">:</span> <span class="kt">Either</span><span class="o">[</span><span class="kt">String</span>, <span class="kt">T</span><span class="o">]</span>
-  <span class="k">def</span> <span class="nf">default</span><span class="k">:</span> <span class="kt">T</span>
+  <span class="k">def</span> <span class="nf">example</span><span class="k">:</span> <span class="kt">T</span>
 <span class="o">}</span>
 </code></pre></div></div>
 
@@ -17,7 +17,7 @@ which has the following definition:</p>
   <span class="k">implicit</span> <span class="k">val</span> <span class="nv">intParameterParser</span><span class="k">:</span> <span class="kt">ParameterParser</span><span class="o">[</span><span class="kt">Int</span><span class="o">]</span> <span class="k">=</span> <span class="k">new</span> <span class="nc">ParameterParser</span><span class="o">[</span><span class="kt">Int</span><span class="o">]</span> <span class="o">{</span>
     <span class="k">override</span> <span class="k">def</span> <span class="nf">parse</span><span class="o">(</span><span class="n">value</span><span class="k">:</span> <span class="kt">String</span><span class="o">)</span><span class="k">:</span> <span class="kt">Either</span><span class="o">[</span><span class="kt">String</span>, <span class="kt">Int</span><span class="o">]</span> <span class="k">=</span> <span class="nc">Try</span><span class="o">(</span><span class="nv">value</span><span class="o">.</span><span class="py">toInt</span><span class="o">).</span><span class="py">toEither</span><span class="o">.</span><span class="py">left</span><span class="o">.</span><span class="py">map</span><span class="o">(</span><span class="nv">_</span><span class="o">.</span><span class="py">getMessage</span><span class="o">)</span>
 
-    <span class="k">override</span> <span class="k">def</span> <span class="nf">default</span><span class="k">:</span> <span class="kt">Int</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">override</span> <span class="k">def</span> <span class="nf">example</span><span class="k">:</span> <span class="kt">Int</span> <span class="o">=</span> <span class="mi">0</span>
   <span class="o">}</span>
 <span class="o">}</span>
 </code></pre></div></div>
