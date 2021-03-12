@@ -93,18 +93,18 @@ object Parser {
 
         result match {
           case Left(errors) =>
-            Left(ParserFailure(errors, partialChoices))
+            Left(ParserFailure(errors, partialChoices, by))
           case Right(value) =>
             val unprocessedParameters = NonEmptyList.fromList(finalState.nonParsedArguments.map(_.value).toList)
             unprocessedParameters match {
               case Some(params) =>
-                Either.left(ParserFailure(params.map(UnknownParameter.apply), partialChoices))
+                Either.left(ParserFailure(params.map(UnknownParameter.apply), partialChoices, by))
               case None =>
                 Right(value)
             }
         }
       case Left(errors) =>
-        Left(ParserFailure(errors, preprocessorFinalState.recordedChoices))
+        Left(ParserFailure(errors, preprocessorFinalState.recordedChoices, by))
     }
   }
 

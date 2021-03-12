@@ -93,4 +93,4 @@ case class Lift[T](f: () => Either[String, T], description: String, examples: No
   override def toString: String = description
 }
 
-case class ParserFailure(errors: NonEmptyList[ParserError], partialChoices: Choices)
+case class ParserFailure(errors: NonEmptyList[ParserError], partialChoices: Choices, spec: Free[Parameter, _])

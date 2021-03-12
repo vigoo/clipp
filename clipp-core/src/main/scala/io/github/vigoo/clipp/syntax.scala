@@ -7,8 +7,7 @@ import io.github.vigoo.clipp.errors.CustomParserError
 
 import scala.util.Try
 
-object syntax {
-
+trait syntax {
   def flag(description: String,
            shortName: Char, longNames: String*): Free[Parameter, Boolean] =
     liftF(Flag(Some(shortName), longNames.toSet, description, None))
@@ -97,3 +96,5 @@ object syntax {
   def lift[T](description: String, example: T)(f: => T): Free[Parameter, T] =
     liftTry(description, example)(Try(f))
 }
+
+object syntax extends syntax

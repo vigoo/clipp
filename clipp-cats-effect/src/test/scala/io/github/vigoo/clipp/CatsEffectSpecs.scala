@@ -72,7 +72,7 @@ class CatsEffectSpecs extends Specification {
     (result: Either[ParserFailure, T]) =>
       result match {
         case Right(_) => ko("Expected failure, got success")
-        case Left(ParserFailure(errors, _)) =>
+        case Left(ParserFailure(errors, _, _)) =>
           errors should beEqualTo(NonEmptyList(error0, errorss.toList))
       }
 }
