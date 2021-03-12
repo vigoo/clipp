@@ -119,6 +119,61 @@ accepted after it. It is possible to create a hierarchy of commands. Think of <c
   <span class="o">}</span> <span class="k">yield</span> <span class="nc">Parameters4</span><span class="o">(</span><span class="n">verbose</span><span class="o">,</span> <span class="n">command</span><span class="o">)</span>
 </code></pre></div></div>
 
+<h3 id="custom-validations-and-lifting-effects">Custom validations and lifting effects</h3>
+<p>It is possible to perform validations from the parameter parser with the <code class="highlighter-rouge">fail</code> parser command:</p>
+
+<div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">val</span> <span class="nv">paramSpec5</span> <span class="k">=</span>
+  <span class="k">for</span> <span class="o">{</span>
+    <span class="n">input</span>  <span class="k">&lt;-</span> <span class="n">namedParameter</span><span class="o">[</span><span class="kt">Int</span><span class="o">](</span><span class="s">"Input value"</span><span class="o">,</span> <span class="s">"VALUE"</span><span class="o">,</span> <span class="s">"input"</span><span class="o">)</span>
+    <span class="n">result</span> <span class="k">&lt;-</span> <span class="nf">if</span> <span class="o">(</span><span class="n">input</span> <span class="o">&gt;</span> <span class="mi">10</span><span class="o">)</span> <span class="nf">pure</span><span class="o">(</span><span class="n">input</span><span class="o">)</span> <span class="k">else</span> <span class="n">fail</span><span class="o">[</span><span class="kt">String</span>, <span class="kt">Int</span><span class="o">](</span><span class="s">"Input is less than 10"</span><span class="o">)</span>
+  <span class="o">}</span> <span class="k">yield</span> <span class="n">result</span>
+<span class="c1">// paramSpec5: cats.free.Free[Parameter, Int] = FlatMapped(</span>
+<span class="c1">//   c = Suspend(</span>
+<span class="c1">//     a = NamedParameter(</span>
+<span class="c1">//       shortName = None,</span>
+<span class="c1">//       longNames = Set("input"),</span>
+<span class="c1">//       placeholder = "VALUE",</span>
+<span class="c1">//       description = "Input value",</span>
+<span class="c1">//       explicitChoices = None,</span>
+<span class="c1">//       parameterParser = io.github.vigoo.clipp.parsers$$anon$2@15eb094e</span>
+<span class="c1">//     )</span>
+<span class="c1">//   ),</span>
+<span class="c1">//   f = &lt;function1&gt;</span>
+<span class="c1">// )</span>
+</code></pre></div></div>
+
+<p>When custom validation or transformation requires performing a side effect, it has to be <em>lifted</em> 
+to the parameter parser. This guarantees that the usage info generation does not run the actual
+effect on example inputs.</p>
+
+<p>Note that the side effects must be idempotent, because the parser may run them twice (the first pass determines the position of the commands, second pass do the parsing).</p>
+
+<p>Example for this:</p>
+
+<div class="language-scala highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">import</span> <span class="nn">java.io.File</span>
+
+<span class="k">val</span> <span class="nv">paramSpec6</span> <span class="k">=</span>
+  <span class="k">for</span> <span class="o">{</span>
+    <span class="n">input</span>  <span class="k">&lt;-</span> <span class="n">namedParameter</span><span class="o">[</span><span class="kt">File</span><span class="o">](</span><span class="s">"Input"</span><span class="o">,</span> <span class="s">"FILE"</span><span class="o">,</span> <span class="s">"input"</span><span class="o">)</span>
+    <span class="n">result</span> <span class="k">&lt;-</span> <span class="nf">liftEither</span><span class="o">(</span><span class="s">"file existence check"</span><span class="o">,</span> <span class="k">new</span> <span class="nc">File</span><span class="o">(</span><span class="s">"example"</span><span class="o">))</span> <span class="o">{</span>
+        <span class="nf">if</span> <span class="o">(</span><span class="nv">input</span><span class="o">.</span><span class="py">exists</span><span class="o">())</span> <span class="nc">Right</span><span class="o">(</span><span class="n">input</span><span class="o">)</span> <span class="k">else</span> <span class="nc">Left</span><span class="o">(</span><span class="s">"File does not exist"</span><span class="o">)</span> 
+    <span class="o">}</span>
+  <span class="o">}</span> <span class="k">yield</span> <span class="n">result</span>
+<span class="c1">// paramSpec6: cats.free.Free[Parameter, File] = FlatMapped(</span>
+<span class="c1">//   c = Suspend(</span>
+<span class="c1">//     a = NamedParameter(</span>
+<span class="c1">//       shortName = None,</span>
+<span class="c1">//       longNames = Set("input"),</span>
+<span class="c1">//       placeholder = "FILE",</span>
+<span class="c1">//       description = "Input",</span>
+<span class="c1">//       explicitChoices = None,</span>
+<span class="c1">//       parameterParser = io.github.vigoo.clipp.parsers$$anon$4@ada269b</span>
+<span class="c1">//     )</span>
+<span class="c1">//   ),</span>
+<span class="c1">//   f = &lt;function1&gt;</span>
+<span class="c1">// )</span>
+</code></pre></div></div>
+
 <h3 id="semantics">Semantics</h3>
 <p>The semantics of these parsing commands are the following:</p>
 
