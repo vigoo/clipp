@@ -1,12 +1,13 @@
 package io.github.vigoo.clipp
 
+import cats.data.NonEmptyList
+import io.github.vigoo.clipp.errors.{CustomError, ParserError}
 import zio._
 import zio.test._
 import zio.test.Assertion._
 import io.github.vigoo.clipp.parsers._
 import io.github.vigoo.clipp.syntax._
 import io.github.vigoo.clipp.zioapi._
-import io.github.vigoo.clipp.zioapi.config._
 import zio.console.Console
 
 object ZioSpecs extends DefaultRunnableSpec {
@@ -42,11 +43,35 @@ object ZioSpecs extends DefaultRunnableSpec {
 
     testM("can provide as layer") {
       val spec = flag("Test", 'x')
-      val config: ZLayer[Console, ParserFailure, ClippConfig[Boolean]] = fromArgsWithUsageInfo(List("-x"), spec)
-      val test: ZIO[ClippConfig[Boolean], Nothing, TestResult] =
+      val config: ZLayer[Console, ParserFailure, Has[Boolean]] = parametersFromArgs(List("-x"), spec).printUsageInfoOnFailure
+      val test: ZIO[Has[Boolean], Nothing, TestResult] =
         parameters[Boolean].map(p => assert(p)(isTrue))
 
       test.provideSomeLayer(config)
-    }
+    },
+
+    suite("liftEffect")(
+      testM("success") {
+        val config = effectfulParametersFromArgs[Any, String](List.empty) { p =>
+          p.liftURIO("test", "ex") {
+            ZIO.succeed("test")
+          }
+        }
+        val test: ZIO[Has[String], Nothing, TestResult] =
+          parameters[String].map(p => assert(p)(equalTo("test")))
+
+        test.provideSomeLayer(config)
+      },
+      testM("failure") {
+        val config = effectfulParametersFromArgs[Any, String](List.empty) { p =>
+          p.liftZIO("test", "ex") {
+            ZIO.fail("failure")
+          }
+        }
+
+        assertM(parameters[String].unit.provideSomeLayer(config).run)(fails(
+          hasField("errors", _.errors.toList, contains[ParserError](CustomError("failure")))))
+      }
+    )
   )
 }

@@ -1,7 +1,11 @@
 package io.github.vigoo.clipp
 
+import cats.data.NonEmptyList
 import cats.effect._
+import cats.free.Free
 import cats.syntax.all._
+
+import io.github.vigoo.clipp.syntax.liftTry
 
 object catseffect {
 
@@ -28,4 +32,14 @@ object catseffect {
   }
 
   object Clipp extends ClippImpl[IO]
+
+  def liftEffect[T](description: String, examples: NonEmptyList[T])(f: IO[T]): Parameter.Spec[T] =
+    liftTry(description, examples) {
+      f.attempt.unsafeRunSync().toTry
+    }
+
+  def liftEffect[T](description: String, example: T)(f: IO[T]): Parameter.Spec[T] =
+    liftTry(description, example) {
+      f.attempt.unsafeRunSync().toTry
+    }
 }

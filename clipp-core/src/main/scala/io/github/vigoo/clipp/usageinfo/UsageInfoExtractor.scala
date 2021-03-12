@@ -1,8 +1,7 @@
 package io.github.vigoo.clipp.usageinfo
 
 import java.util.UUID
-
-import cats.data.{State, Writer}
+import cats.data.{NonEmptyList, State, Writer}
 import cats.free.Free
 import cats.kernel.Monoid
 import cats._
@@ -51,10 +50,12 @@ object UsageInfoExtractor {
         impl.setMetadata(metadata)
       case Fail(message) =>
         impl.fail(message)
+      case l: Lift[_] =>
+        impl.liftExternal(l)
     }
   }
 
-  def getUsageDescription[T](by: Free[Parameter, T], partialChoices: Choices = Map.empty): UsageDescription = {
+  def getUsageDescription[T](by: Parameter.Spec[T], partialChoices: Choices = Map.empty): UsageDescription = {
 
     val initialState = ExtractUsageInfoState(
       isInOptionalBlock = false,
@@ -147,7 +148,7 @@ object UsageInfoExtractor {
       } yield choice
     }
 
-    def optional[T](block: Free[Parameter, T]): UsageInfoM[Option[T]] = {
+    def optional[T](block: Parameter.Spec[T]): UsageInfoM[Option[T]] = {
       getState.flatMap { state =>
         val extractor = block.foldMap(usageInfoExtractor)
         val (extractorResult, finalState): (List[(T, List[ResultGraph])], ExtractUsageInfoState) =
@@ -172,6 +173,12 @@ object UsageInfoExtractor {
 
     def fail[T](message: String): UsageInfoM[T] =
       choose.zero
+
+    def liftExternal[T](l: Lift[T]): UsageInfoM[T] =
+      for {
+        choice <- choice(l, l.examples.toList)
+        _ <- record(l, ArbitraryChoice(choice))
+      } yield choice
   }
 
 }

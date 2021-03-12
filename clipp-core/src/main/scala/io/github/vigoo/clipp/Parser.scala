@@ -23,7 +23,7 @@ object Parser {
       }
     }
   }
-  private type ExtractStateM[A] = EitherT[State[ExtractParametersState, ?], NonEmptyList[ParserError], A]
+  private type ExtractStateM[A] = EitherT[State[ExtractParametersState, *], NonEmptyList[ParserError], A]
   private type CommandLocatorM[A] = WriterT[ExtractStateM, List[CommandLocation], A]
 
   private val commandLocator: Parameter ~> CommandLocatorM = new (Parameter ~> CommandLocatorM) {
@@ -51,6 +51,8 @@ object Parser {
         lift(impl.setMetadata(metadata))
       case Fail(message) =>
         lift(impl.fail(message))
+      case Lift(f, _, _) =>
+        lift(impl.liftExternal(f))
     }
   }
 
@@ -70,10 +72,12 @@ object Parser {
         impl.setMetadata(metadata)
       case Fail(message) =>
         impl.fail(message)
+      case Lift(f, _, _) =>
+        impl.liftExternal(f)
     }
   }
 
-  def extractParameters[T](from: Seq[String], by: Free[Parameter, T]): Either[ParserFailure, T] = {
+  def extractParameters[T](from: Seq[String], by: Parameter.Spec[T]): Either[ParserFailure, T] = {
     val initialState = ExtractParametersState(
       nonParsedArguments = from.toVector.zipWithIndex.map { case (v, i) => PositionedParameter(i, v) },
       remainingCommandPositions = List.empty,
@@ -89,18 +93,18 @@ object Parser {
 
         result match {
           case Left(errors) =>
-            Left(ParserFailure(errors, partialChoices))
+            Left(ParserFailure(errors, partialChoices, by))
           case Right(value) =>
             val unprocessedParameters = NonEmptyList.fromList(finalState.nonParsedArguments.map(_.value).toList)
             unprocessedParameters match {
               case Some(params) =>
-                Either.left(ParserFailure(params.map(UnknownParameter.apply), partialChoices))
+                Either.left(ParserFailure(params.map(UnknownParameter.apply), partialChoices, by))
               case None =>
                 Right(value)
             }
         }
       case Left(errors) =>
-        Left(ParserFailure(errors, preprocessorFinalState.recordedChoices))
+        Left(ParserFailure(errors, preprocessorFinalState.recordedChoices, by))
     }
   }
 
@@ -265,7 +269,7 @@ object Parser {
       } yield result
     }
 
-    def optional[T](parameter: Free[Parameter, T]): ExtractStateM[Option[T]] = {
+    def optional[T](parameter: Parameter.Spec[T]): ExtractStateM[Option[T]] = {
       for {
         state <- getState
         (resultState, result) = parameter.foldMap(parameterExtractor).value.run(state).value
@@ -287,5 +291,11 @@ object Parser {
 
     def fail[T](message: String): ExtractStateM[T] =
       failWith(CustomError(message))
+
+    def liftExternal[T](f: () => Either[String, T]): ExtractStateM[T] =
+      f() match {
+        case Left(error) => fail(error)
+        case Right(value) => pure(value)
+      }
   }
 }

@@ -40,7 +40,6 @@ import io.github.vigoo.clipp._
 import io.github.vigoo.clipp.parsers._
 import io.github.vigoo.clipp.syntax._
 import io.github.vigoo.clipp.zioapi._
-import io.github.vigoo.clipp.zioapi.config
 
 import zio._
 
@@ -51,9 +50,9 @@ object Test2 extends zio.App {
       x <- flag("test parameter", 'x')
     } yield x
 
-    val clippConfig = config.fromArgsWithUsageInfo(args, paramSpec)
+    val clippConfig = parametersFromArgs(args, paramSpec).printUsageInfoOnFailure
     val program = for {
-        x <- config.parameters[Boolean]
+        x <- parameters[Boolean]
         _ <- console.putStrLn(s"x was: $x")
     } yield ExitCode.success
     
@@ -62,4 +61,18 @@ object Test2 extends zio.App {
       .catchAll { _: ParserFailure => ZIO.succeed(ExitCode.failure) }    
   }
 } 
+```
+
+There is support for lifting ZIO effects with arbitrary environment requirements into the parameter parser. 
+To use that, you either have to have an implicit ZIO `Runtime` or use the `effectfulParametersFromArgs` layer 
+constructor:
+
+```scala mdoc
+import zio.clock._
+
+effectfulParametersFromArgs[Clock, String](List.empty) { p =>
+  p.liftURIO("the current instant", "2021-03-12T12:13:12Z") {
+    instant.map(_.toString)
+  }
+}
 ```

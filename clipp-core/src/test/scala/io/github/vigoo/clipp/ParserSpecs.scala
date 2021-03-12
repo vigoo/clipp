@@ -1,7 +1,6 @@
 package io.github.vigoo.clipp
 
 import java.io.File
-
 import cats.data.NonEmptyList
 import cats.free.Free
 import io.github.vigoo.clipp.errors._
@@ -9,6 +8,8 @@ import io.github.vigoo.clipp.parsers._
 import io.github.vigoo.clipp.syntax._
 import org.specs2.matcher.Matcher
 import org.specs2.mutable._
+
+import scala.util.{Failure, Success}
 
 class ParserSpecs extends Specification {
 
@@ -56,7 +57,7 @@ class ParserSpecs extends Specification {
     name <- optional(namedParameter[String]("User name", "name", 'u', "name", "username"))
     result <- name match {
       case Some(value) => pure(value)
-      case None => fail[String]("name was not defined")
+      case None => fail[String, String]("name was not defined")
     }
   } yield result
 
@@ -188,13 +189,99 @@ class ParserSpecs extends Specification {
         CustomError("name was not defined")
       )
     }
+
+    "lift arbitrary functions to the parser" in{
+      "success" in {
+        Parser.extractParameters(
+          Seq("-v"),
+          for {
+            verbose <- flag("verbose", 'v')
+            result <- lift("test", "ex1") { verbose.toString }
+          } yield result
+        ) should beRight(beEqualTo("true"))
+      }
+
+      "is suspended" in {
+        val builder = new StringBuilder
+        val spec = for {
+          verbose <- flag("verbose", 'v')
+          result <- lift("test", "ex1") { builder.append("hello"); verbose.toString }
+        } yield result
+
+        val before = builder.toString()
+
+        val result = Parser.extractParameters(
+          Seq("-v"),
+          spec
+        )
+        val after = builder.toString()
+
+        (before must beEqualTo("")) and
+          (result should beRight(beEqualTo("true"))) and
+          (after must not(beEqualTo(""))) // NOTE: not guaranteed that the effect runs only once
+      }
+
+      "throwing exception" in {
+        Parser.extractParameters(
+          Seq("-v"),
+          for {
+            verbose <- flag("verbose", 'v')
+            result <- lift("test", "ex1") { throw new RuntimeException("lifted function fails") }
+          } yield result
+        ) should failWithErrors(CustomError("lifted function fails"))
+      }
+    }
+
+    "liftEither arbitrary functions to the parser" in {
+      "success" in {
+        Parser.extractParameters(
+          Seq("-v"),
+          for {
+            verbose <- flag("verbose", 'v')
+            result <- liftEither[String, String]("test", "ex1") { Right(verbose.toString) }
+          } yield result
+        ) should beRight(beEqualTo("true"))
+      }
+
+      "failure" in {
+        Parser.extractParameters(
+          Seq("-v"),
+          for {
+            verbose <- flag("verbose", 'v')
+            result <- liftEither("test", "ex1") { Left("lifted function fails") }
+          } yield result
+        ) should failWithErrors(CustomError("lifted function fails"))
+      }
+    }
+
+    "liftTry arbitrary functions to the parser" in {
+      "success" in {
+        Parser.extractParameters(
+          Seq("-v"),
+          for {
+            verbose <- flag("verbose", 'v')
+            result <- liftTry("test", "ex1") { Success(verbose.toString) }
+          } yield result
+        ) should beRight(beEqualTo("true"))
+      }
+
+      "failure" in {
+        Parser.extractParameters(
+          Seq("-v"),
+          for {
+            verbose <- flag("verbose", 'v')
+            result <- liftTry("test", "ex1") { Failure(new RuntimeException("lifted function fails")) }
+          } yield result
+        ) should failWithErrors(CustomError("lifted function fails"))
+      }
+    }
   }
 
-  def failWithErrors[T](error0: ParserError, errorss: ParserError*): Matcher[Either[ParserFailure, T]] =
+  private def failWithErrors[T](error0: ParserError, errorss: ParserError*): Matcher[Either[ParserFailure, T]] =
     (result: Either[ParserFailure, T]) =>
       result match {
         case Right(_) => ko("Expected failure, got success")
-        case Left(ParserFailure(errors, _)) =>
+        case Left(ParserFailure(errors, _, _)) =>
           errors should beEqualTo(NonEmptyList(error0, errorss.toList))
       }
 }
