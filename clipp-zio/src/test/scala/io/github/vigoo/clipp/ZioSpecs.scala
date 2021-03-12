@@ -43,7 +43,7 @@ object ZioSpecs extends DefaultRunnableSpec {
 
     testM("can provide as layer") {
       val spec = flag("Test", 'x')
-      val config: ZLayer[Console, ParserFailure, Has[Boolean]] = parametersFromArgsWithUsageInfo(List("-x"), spec)
+      val config: ZLayer[Console, ParserFailure, Has[Boolean]] = parametersFromArgs(List("-x"), spec).printUsageInfoOnFailure
       val test: ZIO[Has[Boolean], Nothing, TestResult] =
         parameters[Boolean].map(p => assert(p)(isTrue))
 
