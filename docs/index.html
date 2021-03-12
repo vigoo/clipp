@@ -135,7 +135,7 @@ accepted after it. It is possible to create a hierarchy of commands. Think of <c
 <span class="c1">//       placeholder = "VALUE",</span>
 <span class="c1">//       description = "Input value",</span>
 <span class="c1">//       explicitChoices = None,</span>
-<span class="c1">//       parameterParser = io.github.vigoo.clipp.parsers$$anon$5@1c852495</span>
+<span class="c1">//       parameterParser = io.github.vigoo.clipp.parsers$$anon$5@2633938f</span>
 <span class="c1">//     )</span>
 <span class="c1">//   ),</span>
 <span class="c1">//   f = &lt;function1&gt;</span>
@@ -167,7 +167,7 @@ effect on example inputs.</p>
 <span class="c1">//       placeholder = "FILE",</span>
 <span class="c1">//       description = "Input",</span>
 <span class="c1">//       explicitChoices = None,</span>
-<span class="c1">//       parameterParser = io.github.vigoo.clipp.parsers$$anon$10@417e0c74</span>
+<span class="c1">//       parameterParser = io.github.vigoo.clipp.parsers$$anon$10@2a984d9c</span>
 <span class="c1">//     )</span>
 <span class="c1">//   ),</span>
 <span class="c1">//   f = &lt;function1&gt;</span>
@@ -182,6 +182,7 @@ effect on example inputs.</p>
   <li><code class="highlighter-rouge">namedParameter[T]</code> looks for a <code class="highlighter-rouge">--name value</code> pair of arguments <em>before the first command location</em> (if any), <strong>removes both</strong> from the list of arguments and parses the value with an instance of the <code class="highlighter-rouge">ParameterParser</code> type class</li>
   <li><code class="highlighter-rouge">parameter[T]</code> takes the first argument that does not start with <code class="highlighter-rouge">-</code> <em>before the first command location</em> (if any) and **removes it from the list of arguments, then parses the value with an instance of the <code class="highlighter-rouge">ParameterParser</code> type class</li>
   <li><code class="highlighter-rouge">optional</code> makes parser specification section optional</li>
+  <li><code class="highlighter-rouge">repeated</code> repeates a parser specification until it fails and collects the results as a list.</li>
   <li><code class="highlighter-rouge">command</code> is a special parameter with a fix set of values, which is parsed by taking the first argument that does not start with <code class="highlighter-rouge">-</code> and <strong>it drops all the arguments until the command</strong> from the list of arguments.</li>
 </ul>
 
