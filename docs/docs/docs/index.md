@@ -130,6 +130,37 @@ val paramSpec4 =
   } yield Parameters4(verbose, command)
 ```   
 
+### Custom validations and lifting effects
+It is possible to perform validations from the parameter parser with the `fail` parser command:
+
+```scala mdoc
+val paramSpec5 =
+  for {
+    input  <- namedParameter[Int]("Input value", "VALUE", "input")
+    result <- if (input > 10) pure(input) else fail[String, Int]("Input is less than 10")
+  } yield result
+```
+
+When custom validation or transformation requires performing a side effect, it has to be _lifted_ 
+to the parameter parser. This guarantees that the usage info generation does not run the actual
+effect on example inputs. 
+
+Note that the side effects must be idempotent, because the parser may run them twice (the first pass determines the position of the commands, second pass do the parsing).
+
+Example for this:
+
+```scala mdoc
+import java.io.File
+
+val paramSpec6 =
+  for {
+    input  <- namedParameter[File]("Input", "FILE", "input")
+    result <- liftEither("file existence check", new File("example")) {
+        if (input.exists()) Right(input) else Left("File does not exist") 
+    }
+  } yield result
+```
+
 ### Semantics
 The semantics of these parsing commands are the following:
 

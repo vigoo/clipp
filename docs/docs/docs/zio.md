@@ -62,3 +62,17 @@ object Test2 extends zio.App {
   }
 } 
 ```
+
+There is support for lifting ZIO effects with arbitrary environment requirements into the parameter parser. 
+To use that, you either have to have an implicit ZIO `Runtime` or use the `effectfulParametersFromArgs` layer 
+constructor:
+
+```scala mdoc
+import zio.clock._
+
+effectfulParametersFromArgs[Clock, String](List.empty) { p =>
+  p.liftURIO("the current instant", "2021-03-12T12:13:12Z") {
+    instant.map(_.toString)
+  }
+}
+```
