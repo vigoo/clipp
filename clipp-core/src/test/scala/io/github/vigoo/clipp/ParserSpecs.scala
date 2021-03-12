@@ -25,6 +25,11 @@ class ParserSpecs extends Specification {
     verbose <- flag("Verbosity", 'v', "verbose")
   } yield (verbose, name, password)
 
+  private val specMultiNamedParams = for {
+    names <- repeated { namedParameter[String]("Name", "name", 'n', "name", "username") }
+    _ <- namedParameter[String]("other", "other", "other")
+  } yield names
+
   private val specMix = for {
     name <- namedParameter[String]("User name", "name", 'u', "name", "username")
     verbose <- flag("Verbosity", 'v', "verbose")
@@ -97,6 +102,12 @@ class ParserSpecs extends Specification {
     "simple parameters can be interleaved with others" in {
       Parser.extractParameters(Seq("-v", "/home/user/x.in", "--name", "test", "/home/user/x.out"), specMix) should beRight(
         ("test", true, new File("/home/user/x.in").toPath, new File("/home/user/x.out").toPath)
+      )
+    }
+
+    "be able to collect multiple named parameters" in {
+      Parser.extractParameters(Seq("--name", "1", "--other", "param", "--username", "2", "-n", "3"), specMultiNamedParams) should beRight(
+        (List("1", "2", "3"))
       )
     }
 
