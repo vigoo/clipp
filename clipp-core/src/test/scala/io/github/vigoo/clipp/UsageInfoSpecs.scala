@@ -182,6 +182,8 @@ class UsageInfoSpecs extends Specification {
       val graph = UsageInfoExtractor.getUsageDescription(spec)
       val usageInfo = UsageInfo.generateUsageInfo(graph)
 
+      println(UsagePrettyPrinter.prettyPrint(graph))
+
       usageInfo should beSequenceOf(
         bePrintNodeOf(Flag(Some('v'), Set.empty, "Verbose", None)),
         bePrintNodeOf(Command(List("a", "b", "c"), None)),
