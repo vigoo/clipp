@@ -55,7 +55,7 @@ object ZioSpecs extends DefaultRunnableSpec {
       testM("success") {
         ZIO.runtime.flatMap { implicit runtime: Runtime[Any] => // TODO: do not need this
 
-          val spec = liftEffect("test", "ex") {
+          val spec = liftURIO("test", "ex") {
             ZIO.succeed("test")
           }
           val config: ZLayer[Console, ParserFailure, ClippConfig[String]] = fromArgsWithUsageInfo(List.empty, spec)
@@ -68,7 +68,7 @@ object ZioSpecs extends DefaultRunnableSpec {
       testM("failure") {
         ZIO.runtime.flatMap { implicit runtime: Runtime[Any] => // TODO: do not need this
 
-          val spec = liftEffect("test", "ex") {
+          val spec = liftZIO("test", "ex") {
             ZIO.fail("failure")
           }
           val config: ZLayer[Console, ParserFailure, ClippConfig[String]] = fromArgsWithUsageInfo(List.empty, spec)

@@ -3,6 +3,7 @@ package io.github.vigoo.clipp
 import cats.data.NonEmptyList
 import cats.free.Free
 import cats.free.Free.liftF
+import io.github.vigoo.clipp.errors.CustomParserError
 
 import scala.util.Try
 
@@ -75,20 +76,20 @@ object syntax {
   def pure[T](value: T): Free[Parameter, T] =
     Free.pure(value)
 
-  def fail[T](message: String): Free[Parameter, T] =
-    liftF[Parameter, T](Fail(message))
+  def fail[E : CustomParserError, T](failure: E): Free[Parameter, T] =
+    liftF[Parameter, T](Fail(CustomParserError.toMessage(failure)))
 
-  def liftEither[T](description: String, examples: NonEmptyList[T])(f: => Either[String, T]): Free[Parameter, T] =
-    liftF[Parameter, T](Lift(() => f, description, examples))
+  def liftEither[E: CustomParserError, T](description: String, examples: NonEmptyList[T])(f: => Either[E, T]): Free[Parameter, T] =
+    liftF[Parameter, T](Lift(() => f.left.map(CustomParserError.toMessage[E]), description, examples))
 
-  def liftEither[T](description: String, example: T)(f: => Either[String, T]): Free[Parameter, T] =
-    liftF[Parameter, T](Lift(() => f, description, NonEmptyList.one(example)))
+  def liftEither[E: CustomParserError, T](description: String, example: T)(f: => Either[E, T]): Free[Parameter, T] =
+    liftF[Parameter, T](Lift(() => f.left.map(CustomParserError.toMessage[E]), description, NonEmptyList.one(example)))
 
   def liftTry[T](description: String, examples: NonEmptyList[T])(f: => Try[T]): Free[Parameter, T] =
-    liftEither(description, examples)(f.toEither.left.map(_.getMessage))
+    liftEither(description, examples)(f.toEither)
 
   def liftTry[T](description: String, example: T)(f: => Try[T]): Free[Parameter, T] =
-    liftEither(description, example)(f.toEither.left.map(_.getMessage))
+    liftEither(description, example)(f.toEither)
 
   def lift[T](description: String, examples: NonEmptyList[T])(f: => T): Free[Parameter, T] =
     liftTry(description, examples)(Try(f))

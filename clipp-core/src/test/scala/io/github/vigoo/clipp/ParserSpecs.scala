@@ -57,7 +57,7 @@ class ParserSpecs extends Specification {
     name <- optional(namedParameter[String]("User name", "name", 'u', "name", "username"))
     result <- name match {
       case Some(value) => pure(value)
-      case None => fail[String]("name was not defined")
+      case None => fail[String, String]("name was not defined")
     }
   } yield result
 
@@ -238,7 +238,7 @@ class ParserSpecs extends Specification {
           Seq("-v"),
           for {
             verbose <- flag("verbose", 'v')
-            result <- liftEither("test", "ex1") { Right(verbose.toString) }
+            result <- liftEither[String, String]("test", "ex1") { Right(verbose.toString) }
           } yield result
         ) should beRight(beEqualTo("true"))
       }

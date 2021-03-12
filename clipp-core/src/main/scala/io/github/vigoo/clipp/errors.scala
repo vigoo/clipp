@@ -44,4 +44,16 @@ object errors {
       case CommandPositionIsNotStatic(validCommands) => s"Command position is not static. Valid commands: ${validCommands.mkString(", ")}"
       case CustomError(message) => message
     }
+
+  trait CustomParserError[-E] {
+    def toMessage(error: E): String
+  }
+
+  object CustomParserError {
+    def toMessage[E](value: E)(implicit customParserError: CustomParserError[E]): String =
+      customParserError.toMessage(value)
+  }
+
+  implicit val customStringParserError: CustomParserError[String] = (error: String) => error
+  implicit val customThrowableParserError: CustomParserError[Throwable] = (error: Throwable) => error.getMessage
 }

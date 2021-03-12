@@ -2,7 +2,8 @@ package io.github.vigoo.clipp
 
 import cats.data.NonEmptyList
 import cats.free.Free
-import zio.{Runtime, ZIO}
+import io.github.vigoo.clipp.errors.CustomParserError
+import zio.{CanFail, RIO, Runtime, URIO, ZIO}
 import zio.console.{Console, putStrLn}
 
 package object zioapi {
@@ -30,14 +31,24 @@ package object zioapi {
 
   object Clipp extends ClippImpl[ClippZIO]
 
-  // TODO: E + remove implicit
-  def liftEffect[R, T](description: String, examples: NonEmptyList[T])(f: ZIO[R, String, T])(implicit runtime: Runtime[R]): Free[Parameter, T] =
+  // TODO:  remove implicit
+  def liftZIO[R, E, T](description: String, examples: NonEmptyList[T])(f: ZIO[R, E, T])(implicit runtime: Runtime[R], ev: CanFail[E], customParserError: CustomParserError[E]): Free[Parameter, T] =
     syntax.liftEither(description, examples) {
       runtime.unsafeRun(f.either)
     }
 
-  def liftEffect[R, T](description: String, example: T)(f: ZIO[R, String, T])(implicit runtime: Runtime[R]): Free[Parameter, T] =
+  def liftZIO[R, E, T](description: String, example: T)(f: ZIO[R, E, T])(implicit runtime: Runtime[R], ev: CanFail[E], customParserError: CustomParserError[E]): Free[Parameter, T] =
     syntax.liftEither(description, example) {
       runtime.unsafeRun(f.either)
+    }
+
+  def liftURIO[R, T](description: String, examples: NonEmptyList[T])(f: URIO[R, T])(implicit runtime: Runtime[R]): Free[Parameter, T] =
+    syntax.lift(description, examples) {
+      runtime.unsafeRun(f)
+    }
+
+  def liftURIO[R, T](description: String, example: T)(f: URIO[R, T])(implicit runtime: Runtime[R]): Free[Parameter, T] =
+    syntax.lift(description, example) {
+      runtime.unsafeRun(f)
     }
 }
