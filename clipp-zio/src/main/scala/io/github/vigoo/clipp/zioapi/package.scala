@@ -85,11 +85,6 @@ package object zioapi {
         Clipp.displayErrorsAndUsageInfo(parserFailure)
       }
   }
-  def parametersFromArgsWithUsageInfo[T : Tag](args: List[String], spec: Parameter.Spec[T]): ZLayer[Console, ParserFailure, Has[T]] =
-    parametersFromArgs(args, spec)
-      .tapError { parserFailure: ParserFailure =>
-        Clipp.displayErrorsAndUsageInfo(parserFailure)
-      }
 
   def parameters[T : Tag]: URIO[Has[T], T] = ZIO.service[T]
 }

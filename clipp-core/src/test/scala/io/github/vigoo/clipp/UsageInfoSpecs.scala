@@ -261,6 +261,8 @@ class UsageInfoSpecs extends Specification {
       val graph = UsageInfoExtractor.getUsageDescription(spec)
       val usageInfo = UsageInfo.generateUsageInfo(graph)
 
+      println(UsagePrettyPrinter.prettyPrint(graph))
+
       ((usageInfo should beSequenceOf(
         bePrintNodeOfLift(),
         bePrintChoiceS(Map("test" -> Set(ArbitraryChoice(1)))),
