@@ -23,7 +23,7 @@ object Parser {
       }
     }
   }
-  private type ExtractStateM[A] = EitherT[State[ExtractParametersState, ?], NonEmptyList[ParserError], A]
+  private type ExtractStateM[A] = EitherT[State[ExtractParametersState, *], NonEmptyList[ParserError], A]
   private type CommandLocatorM[A] = WriterT[ExtractStateM, List[CommandLocation], A]
 
   private val commandLocator: Parameter ~> CommandLocatorM = new (Parameter ~> CommandLocatorM) {
@@ -51,6 +51,8 @@ object Parser {
         lift(impl.setMetadata(metadata))
       case Fail(message) =>
         lift(impl.fail(message))
+      case Lift(f, _, _) =>
+        lift(impl.liftExternal(f))
     }
   }
 
@@ -70,6 +72,8 @@ object Parser {
         impl.setMetadata(metadata)
       case Fail(message) =>
         impl.fail(message)
+      case Lift(f, _, _) =>
+        impl.liftExternal(f)
     }
   }
 
@@ -287,5 +291,11 @@ object Parser {
 
     def fail[T](message: String): ExtractStateM[T] =
       failWith(CustomError(message))
+
+    def liftExternal[T](f: () => Either[String, T]): ExtractStateM[T] =
+      f() match {
+        case Left(error) => fail(error)
+        case Right(value) => pure(value)
+      }
   }
 }

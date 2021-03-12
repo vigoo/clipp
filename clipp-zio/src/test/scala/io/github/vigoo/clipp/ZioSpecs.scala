@@ -1,5 +1,7 @@
 package io.github.vigoo.clipp
 
+import cats.data.NonEmptyList
+import io.github.vigoo.clipp.errors.{CustomError, ParserError}
 import zio._
 import zio.test._
 import zio.test.Assertion._
@@ -47,6 +49,34 @@ object ZioSpecs extends DefaultRunnableSpec {
         parameters[Boolean].map(p => assert(p)(isTrue))
 
       test.provideSomeLayer(config)
-    }
+    },
+
+    suite("liftEffect")(
+      testM("success") {
+        ZIO.runtime.flatMap { implicit runtime: Runtime[Any] => // TODO: do not need this
+
+          val spec = liftEffect("test", "ex") {
+            ZIO.succeed("test")
+          }
+          val config: ZLayer[Console, ParserFailure, ClippConfig[String]] = fromArgsWithUsageInfo(List.empty, spec)
+          val test: ZIO[ClippConfig[String], Nothing, TestResult] =
+            parameters[String].map(p => assert(p)(equalTo("test")))
+
+          test.provideSomeLayer(config)
+        }
+      },
+      testM("failure") {
+        ZIO.runtime.flatMap { implicit runtime: Runtime[Any] => // TODO: do not need this
+
+          val spec = liftEffect("test", "ex") {
+            ZIO.fail("failure")
+          }
+          val config: ZLayer[Console, ParserFailure, ClippConfig[String]] = fromArgsWithUsageInfo(List.empty, spec)
+
+          assertM(parameters[String].unit.provideSomeLayer(config).run)(fails(
+            hasField("errors", _.errors.toList, contains[ParserError](CustomError("failure")))))
+        }
+      }
+    )
   )
 }

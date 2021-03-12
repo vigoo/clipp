@@ -1,7 +1,8 @@
 package io.github.vigoo.clipp
 
-import java.io.File
+import cats.data.NonEmptyList
 
+import java.io.File
 import cats.free.Free
 import io.github.vigoo.clipp.parsers._
 import io.github.vigoo.clipp.syntax._
@@ -180,7 +181,6 @@ class UsageInfoSpecs extends Specification {
 
       val graph = UsageInfoExtractor.getUsageDescription(spec)
       val usageInfo = UsageInfo.generateUsageInfo(graph)
-      println(UsagePrettyPrinter.prettyPrint(graph))
 
       usageInfo should beSequenceOf(
         bePrintNodeOf(Flag(Some('v'), Set.empty, "Verbose", None)),
@@ -220,6 +220,70 @@ class UsageInfoSpecs extends Specification {
         bePrintNodeOf(Flag(Some('v'), Set.empty, "Verbose", None)),
       )
     }
+
+    "lifted functions are not executed but the provided single example is used" in {
+      val builder = new StringBuilder
+      val spec = for{
+        value <- lift("test", 1) { builder.append("hello"); 0 }
+        _ <- value match {
+          case 0 =>
+            flag("a", 'a')
+          case 1 =>
+            flag("b", 'b')
+          case _ =>
+            flag("c", 'c')
+        }
+      } yield ()
+
+      val graph = UsageInfoExtractor.getUsageDescription(spec)
+      val usageInfo = UsageInfo.generateUsageInfo(graph)
+
+      (usageInfo should beSequenceOf(
+        bePrintNodeOfLift(),
+        bePrintNodeOf(Flag(Some('b'), Set.empty, "b", None)),
+      )) and (builder.toString() must beEqualTo(""))
+    }
+
+    "lifted functions are not executed but the provided examples are used" in {
+      val builder = new StringBuilder
+      val spec = for{
+        value <- lift("test", NonEmptyList.of(1, 2)) { builder.append("hello"); 0 }
+        _ <- value match {
+          case 0 =>
+            flag("a", 'a')
+          case 1 =>
+            flag("b", 'b')
+          case _ =>
+            flag("c", 'c')
+        }
+      } yield ()
+
+      val graph = UsageInfoExtractor.getUsageDescription(spec)
+      val usageInfo = UsageInfo.generateUsageInfo(graph)
+
+      ((usageInfo should beSequenceOf(
+        bePrintNodeOfLift(),
+        bePrintChoiceS(Map("test" -> Set(ArbitraryChoice(1)))),
+        beStartBranch,
+        bePrintNodeOf(Flag(Some('b'), Set.empty, "b", None)),
+        beExitBranch,
+        bePrintChoiceS(Map("test" -> Set(ArbitraryChoice(2)))),
+        beStartBranch,
+        bePrintNodeOf(Flag(Some('c'), Set.empty, "c", None)),
+        beExitBranch,
+      )) or
+        (usageInfo should beSequenceOf(
+          bePrintNodeOfLift(),
+          bePrintChoiceS(Map("test" -> Set(ArbitraryChoice(2)))),
+          beStartBranch,
+          bePrintNodeOf(Flag(Some('c'), Set.empty, "c", None)),
+          beExitBranch,
+          bePrintChoiceS(Map("test" -> Set(ArbitraryChoice(1)))),
+          beStartBranch,
+          bePrintNodeOf(Flag(Some('b'), Set.empty, "b", None)),
+          beExitBranch,
+        ))) and (builder.toString() must beEqualTo(""))
+    }
   }
 
   private def beSequenceOf(nodes: Matcher[PrettyPrintCommand]*): Matcher[Either[String, Vector[PrettyPrintCommand]]] = (result: Either[String, Vector[PrettyPrintCommand]]) => {
@@ -249,6 +313,15 @@ class UsageInfoSpecs extends Specification {
     }
   }
 
+  private def bePrintNodeOfLift[T](): Matcher[PrettyPrintCommand] = (cmd: PrettyPrintCommand) => {
+    cmd match {
+      case PrintNode(param) =>
+        param.parameter should beAnInstanceOf[Lift[_]] and (param.isInOptionalBlock should beFalse)
+      case command =>
+        ko(s"Command needs to be PrintNode but it is $command")
+    }
+  }
+
   private def beOptionalPrintNodeOf[T](parameter: Parameter[T]): Matcher[PrettyPrintCommand] = (cmd: PrettyPrintCommand) => {
     cmd match {
       case PrintNode(param) =>
@@ -262,6 +335,15 @@ class UsageInfoSpecs extends Specification {
     cmd match {
       case PrintChoice(mergedChoices) =>
         mergedChoices should beEqualTo(expectedChoices)
+      case command =>
+        ko(s"Command needs to be PrintChoice but it is $command")
+    }
+  }
+
+  private def bePrintChoiceS(expectedChoices: Map[String, Set[Choice]]): Matcher[PrettyPrintCommand] = (cmd: PrettyPrintCommand) => {
+    cmd match {
+      case PrintChoice(mergedChoices) =>
+        mergedChoices.map { case (k, v) => k.toString -> v } should beEqualTo(expectedChoices)
       case command =>
         ko(s"Command needs to be PrintChoice but it is $command")
     }

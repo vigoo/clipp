@@ -1,8 +1,7 @@
 package io.github.vigoo.clipp.usageinfo
 
 import java.util.UUID
-
-import cats.data.{State, Writer}
+import cats.data.{NonEmptyList, State, Writer}
 import cats.free.Free
 import cats.kernel.Monoid
 import cats._
@@ -51,6 +50,8 @@ object UsageInfoExtractor {
         impl.setMetadata(metadata)
       case Fail(message) =>
         impl.fail(message)
+      case l: Lift[_] =>
+        impl.liftExternal(l)
     }
   }
 
@@ -172,6 +173,12 @@ object UsageInfoExtractor {
 
     def fail[T](message: String): UsageInfoM[T] =
       choose.zero
+
+    def liftExternal[T](l: Lift[T]): UsageInfoM[T] =
+      for {
+        choice <- choice(l, l.examples.toList)
+        _ <- record(l, ArbitraryChoice(choice))
+      } yield choice
   }
 
 }

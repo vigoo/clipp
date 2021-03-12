@@ -67,6 +67,8 @@ object UsagePrettyPrinter {
               s"<$placeholder>"
             case Command(_, _) =>
               "command"
+            case Lift(_, description, _) =>
+              description
             case Optional(parameter) =>
               throw new IllegalStateException(s"Optionals should have been prefiltered")
             case _: SetMetadata =>
@@ -113,6 +115,8 @@ object UsagePrettyPrinter {
 
           case _: Fail[_] =>
             throw new IllegalStateException(s"Fail should have been prefiltered")
+
+          case Lift(_, _, _) =>
         }
         prettyPrint(remaining, level, builder)
       case PrintChoice(choice) :: remaining =>
@@ -162,7 +166,7 @@ object UsagePrettyPrinter {
                 paramSet += param
               case _: NamedParameter[_] =>
                 paramSet += param
-              case SimpleParameter(placeholder, description, parameterParser, _) =>
+              case SimpleParameter(placeholder, _, _, _) =>
                 prettyPrintUsageIfSingle(paramSet.toSeq, builder)
                 paramSet.clear()
                 if (param.isInOptionalBlock) {
@@ -178,7 +182,8 @@ object UsagePrettyPrinter {
                 } else {
                   builder.append(" [command]")
                 }
-              case Optional(parameter) =>
+              case Lift(_, _, _) =>
+              case Optional(_) =>
                 throw new IllegalStateException(s"Optionals should have been prefiltered")
               case _: SetMetadata =>
                 throw new IllegalStateException(s"SetMetadata should have been prefiltered")

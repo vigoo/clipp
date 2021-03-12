@@ -87,4 +87,10 @@ case class Fail[T](message: String)
   override def toString: String = s"fail with $message"
 }
 
+case class Lift[T](f: () => Either[String, T], description: String, examples: NonEmptyList[T])
+  extends Parameter[T] {
+
+  override def toString: String = description
+}
+
 case class ParserFailure(errors: NonEmptyList[ParserError], partialChoices: Choices)
