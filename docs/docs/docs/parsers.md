@@ -10,7 +10,7 @@ which has the following definition:
 ```scala
 trait ParameterParser[T] {
   def parse(value: String): Either[String, T]
-  def default: T
+  def example: T
 }
 ```
 
@@ -24,7 +24,7 @@ object parsers {
   implicit val intParameterParser: ParameterParser[Int] = new ParameterParser[Int] {
     override def parse(value: String): Either[String, Int] = Try(value.toInt).toEither.left.map(_.getMessage)
 
-    override def default: Int = 0
+    override def example: Int = 0
   }
 }
 ```

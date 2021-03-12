@@ -141,3 +141,5 @@ The semantics of these parsing commands are the following:
 
 The semantics of `command` strongly influences the set of CLI interfaces parseable by this library, but it is
 a very important detail for the current implementation.    
+
+Custom failures can be introduced with the `fail` parser command.
