@@ -62,7 +62,7 @@ lazy val commonSettings =
 
 lazy val root = Project("clipp", file(".")).settings(commonSettings).settings(
   publishArtifact := false
-) aggregate(core, zio, catsEffect)
+) aggregate(core, zio, catsEffect, catsEffect3)
 
 lazy val core = Project("clipp-core", file("clipp-core")).settings(commonSettings).settings(
   description := "Clipp core",
@@ -89,6 +89,15 @@ lazy val catsEffect = Project("clipp-cats-effect", file("clipp-cats-effect")).se
 
   libraryDependencies ++= Seq(
     "org.typelevel" %% "cats-effect" % "2.4.1",
+    "org.specs2" %% "specs2-core" % "4.10.6" % "test"
+  )
+).dependsOn(core)
+
+lazy val catsEffect3 = Project("clipp-cats-effect3", file("clipp-cats-effect3")).settings(commonSettings).settings(
+  description := "Clipp Cats-Effect 3 interface",
+
+  libraryDependencies ++= Seq(
+    "org.typelevel" %% "cats-effect" % "3.0.1",
     "org.specs2" %% "specs2-core" % "4.10.6" % "test"
   )
 ).dependsOn(core)
@@ -133,7 +142,7 @@ lazy val docs = project
     //micrositeAnalyticsToken := "UA-56320875-2",
     includeFilter in makeSite := "*.html" | "*.css" | "*.png" | "*.jpg" | "*.gif" | "*.js" | "*.swf" | "*.txt" | "*.xml" | "*.svg",
   )
-  .dependsOn(core, catsEffect, zio)
+  .dependsOn(core, catsEffect, zio, catsEffect3)
 
 // Temporary fix to avoid including mdoc in the published POM
 

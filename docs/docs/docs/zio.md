@@ -7,7 +7,7 @@ title: ZIO
 To use the ZIO interface add the following dependency:
 
 ```scala
-libraryDependencies += "io.github.vigoo" %% "clipp-zio" % "0.4.0"
+libraryDependencies += "io.github.vigoo" %% "clipp-zio" % "0.6.0"
 ```
 
 It is possible to directly call the ZIO interface wrapper, for example:
