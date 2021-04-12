@@ -76,9 +76,9 @@ lazy val zio = Project("clipp-zio", file("clipp-zio")).settings(commonSettings).
   description := "Clipp ZIO interface",
 
   libraryDependencies ++= Seq(
-    "dev.zio" %% "zio" % "1.0.5",
-    "dev.zio" %% "zio-test" % "1.0.5" % Test,
-    "dev.zio" %% "zio-test-sbt" % "1.0.5" % Test
+    "dev.zio" %% "zio" % "1.0.6",
+    "dev.zio" %% "zio-test" % "1.0.6" % Test,
+    "dev.zio" %% "zio-test-sbt" % "1.0.6" % Test
   ),
 
   testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework")
