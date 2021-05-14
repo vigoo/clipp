@@ -97,7 +97,7 @@ lazy val catsEffect3 = Project("clipp-cats-effect3", file("clipp-cats-effect3"))
   description := "Clipp Cats-Effect 3 interface",
 
   libraryDependencies ++= Seq(
-    "org.typelevel" %% "cats-effect" % "3.1.0",
+    "org.typelevel" %% "cats-effect" % "3.1.1",
     "org.specs2" %% "specs2-core" % "4.11.0" % "test"
   )
 ).dependsOn(core)
