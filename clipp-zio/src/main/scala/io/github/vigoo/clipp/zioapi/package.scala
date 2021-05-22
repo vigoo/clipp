@@ -23,10 +23,10 @@ package object zioapi {
       io.flatMap(f)
 
     override def showErrors(errors: String): ClippZIO[Unit] =
-      putStrLn(errors)
+      putStrLn(errors).orDie
 
     override def showUsage(usageInfo: String): ClippZIO[Unit] =
-      putStrLn(usageInfo)
+      putStrLn(usageInfo).orDie
   }
 
   object Clipp extends ClippImpl[ClippZIO]
