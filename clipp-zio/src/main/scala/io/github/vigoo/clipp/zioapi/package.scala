@@ -81,7 +81,7 @@ package object zioapi {
 
   implicit class ZLayerOps[R <: Console, T](layer: ZLayer[R, ParserFailure, T]) {
     def printUsageInfoOnFailure: ZLayer[R, ParserFailure, T] =
-      layer.tapError { parserFailure: ParserFailure =>
+      layer.tapError { (parserFailure: ParserFailure) =>
         Clipp.displayErrorsAndUsageInfo(parserFailure)
       }
   }

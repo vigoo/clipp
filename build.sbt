@@ -7,18 +7,26 @@ dynverSonatypeSnapshots in ThisBuild := true
 
 val scala212 = "2.12.12"
 val scala213 = "2.13.6"
+val scala3 = "3.0.0"
 
 val scalacOptions212 = Seq("-Ypartial-unification", "-deprecation")
 val scalacOptions213 = Seq("-deprecation")
+val scalacOptions3 = Seq("-deprecation", "-Ykind-projector")
 
 lazy val commonSettings =
   Seq(
     scalaVersion := scala213,
-    crossScalaVersions := List(scala212, scala213),
+    crossScalaVersions := List(scala212, scala213, scala3),
 
     organization := "io.github.vigoo",
 
-    addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.10.3"),
+    libraryDependencies ++=
+      (CrossVersion.partialVersion(scalaVersion.value) match {
+        case Some((3, _)) => Seq.empty
+        case _ => Seq(
+          compilerPlugin("org.typelevel" % "kind-projector" % "0.13.0" cross CrossVersion.full),
+        )
+      }),
 
     libraryDependencies ++= Seq(
       "org.typelevel" %% "cats-core" % "2.6.1",
@@ -33,6 +41,7 @@ lazy val commonSettings =
     scalacOptions ++= (CrossVersion.partialVersion(scalaVersion.value) match {
       case Some((2, 12)) => scalacOptions212
       case Some((2, 13)) => scalacOptions213
+      case Some((3, 0)) => scalacOptions3
       case _ => Nil
     }),
 
@@ -68,8 +77,11 @@ lazy val core = Project("clipp-core", file("clipp-core")).settings(commonSetting
   description := "Clipp core",
 
   libraryDependencies ++= Seq(
-    "org.specs2" %% "specs2-core" % "4.9.2" % "test"
-  )
+    "dev.zio" %% "zio-test" % "1.0.8" % Test,
+    "dev.zio" %% "zio-test-sbt" % "1.0.8" % Test
+  ),
+
+  testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework")
 )
 
 lazy val zio = Project("clipp-zio", file("clipp-zio")).settings(commonSettings).settings(
@@ -89,8 +101,11 @@ lazy val catsEffect = Project("clipp-cats-effect", file("clipp-cats-effect")).se
 
   libraryDependencies ++= Seq(
     "org.typelevel" %% "cats-effect" % "2.5.1",
-    "org.specs2" %% "specs2-core" % "4.12.0" % "test"
-  )
+    "dev.zio" %% "zio-test" % "1.0.8" % Test,
+    "dev.zio" %% "zio-test-sbt" % "1.0.8" % Test,
+  ),
+
+  testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework")
 ).dependsOn(core)
 
 lazy val catsEffect3 = Project("clipp-cats-effect3", file("clipp-cats-effect3")).settings(commonSettings).settings(
@@ -98,8 +113,11 @@ lazy val catsEffect3 = Project("clipp-cats-effect3", file("clipp-cats-effect3"))
 
   libraryDependencies ++= Seq(
     "org.typelevel" %% "cats-effect" % "3.1.1",
-    "org.specs2" %% "specs2-core" % "4.12.0" % "test"
-  )
+    "dev.zio" %% "zio-test" % "1.0.8" % Test,
+    "dev.zio" %% "zio-test-sbt" % "1.0.8" % Test,
+  ),
+
+  testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework")
 ).dependsOn(core)
 
 lazy val docs = project
@@ -142,7 +160,7 @@ lazy val docs = project
     //micrositeAnalyticsToken := "UA-56320875-2",
     includeFilter in makeSite := "*.html" | "*.css" | "*.png" | "*.jpg" | "*.gif" | "*.js" | "*.swf" | "*.txt" | "*.xml" | "*.svg",
   )
-  .dependsOn(core, catsEffect, zio, catsEffect3)
+  .dependsOn(core, catsEffect, zio)
 
 // Temporary fix to avoid including mdoc in the published POM
 

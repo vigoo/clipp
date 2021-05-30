@@ -31,7 +31,7 @@ object UsageInfoExtractor {
                                    fixedChoices: Choices,
                                    metadata: Option[ParameterParserMetadata])
 
-  private type UsageInfoExtractor = Fx.fx3[Choose, Writer[ResultGraph, ?], State[ExtractUsageInfoState, ?]]
+  private type UsageInfoExtractor = Fx.fx3[Choose, Writer[ResultGraph, *], State[ExtractUsageInfoState, *]]
   private type UsageInfoM[A] = Eff[UsageInfoExtractor, A]
 
   private val usageInfoExtractor: Parameter ~> UsageInfoM = new (Parameter ~> UsageInfoM) {
