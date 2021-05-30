@@ -6,12 +6,13 @@ import cats.free.Free
 import io.github.vigoo.clipp.errors._
 import io.github.vigoo.clipp.parsers._
 import io.github.vigoo.clipp.syntax._
-import org.specs2.matcher.Matcher
-import org.specs2.mutable._
+import zio.test._
+import zio.test.Assertion._
+import zio.test.environment.TestEnvironment
 
 import scala.util.{Failure, Success}
 
-class ParserSpecs extends Specification {
+object ParserSpecs extends DefaultRunnableSpec {
 
   private val specFlags = for {
     verbose <- flag("Verbosity", 'v', "verbose")
@@ -26,7 +27,9 @@ class ParserSpecs extends Specification {
   } yield (verbose, name, password)
 
   private val specMultiNamedParams = for {
-    names <- repeated { namedParameter[String]("Name", "name", 'n', "name", "username") }
+    names <- repeated {
+      namedParameter[String]("Name", "name", 'n', "name", "username")
+    }
     _ <- namedParameter[String]("other", "other", "other")
   } yield names
 
@@ -66,233 +69,246 @@ class ParserSpecs extends Specification {
     }
   } yield result
 
-  "CLI Parameter Parser" should {
-    "be able to handle missing flags" in {
-      Parser.extractParameters(Seq("-v", "--stack-traces"), specFlags) should beRight((true, false, true))
-    }
+  override def spec: ZSpec[TestEnvironment, Any] =
+    suite("CLI Parameter Parser")(
+      test("be able to handle missing flags") {
+        assert(Parser.extractParameters(Seq("-v", "--stack-traces"), specFlags))(isRight(equalTo((true, false, true))))
+      },
 
-    "be able to parse flags in random order" in {
-      Parser.extractParameters(Seq("--extract", "-S", "-v"), specFlags) should beRight((true, true, true))
-    }
+      test("be able to parse flags in random order") {
+        assert(Parser.extractParameters(Seq("--extract", "-S", "-v"), specFlags))(isRight(equalTo((true, true, true))))
+      },
 
-    "report undefined flags" in {
-      Parser.extractParameters(Seq("--verbose", "-H", "--other"), specFlags) should failWithErrors(
-        UnknownParameter("-H"), UnknownParameter("--other")
-      )
-    }
+      test("report undefined flags") {
+        assert(Parser.extractParameters(Seq("--verbose", "-H", "--other"), specFlags))(failWithErrors(
+          UnknownParameter("-H"), UnknownParameter("--other")
+        ))
+      },
 
-    "be able to find named parameters" in {
-      Parser.extractParameters(Seq("--name", "somebody", "--password", "xxx"), specNamedParams) should beRight(
-        (false, "somebody", "xxx")
-      )
-    }
+      test("be able to find named parameters") {
+        assert(Parser.extractParameters(Seq("--name", "somebody", "--password", "xxx"), specNamedParams))(isRight(equalTo(
+          (false, "somebody", "xxx")
+        )))
+      },
 
-    "be able to find named parameters mixed with flags" in {
-      Parser.extractParameters(Seq("--password", "xxx", "-v", "-u", "somebody"), specNamedParams) should beRight(
-        (true, "somebody", "xxx")
-      )
-    }
+      test("be able to find named parameters mixed with flags") {
+        assert(Parser.extractParameters(Seq("--password", "xxx", "-v", "-u", "somebody"), specNamedParams))(isRight(equalTo(
+          (true, "somebody", "xxx")
+        )))
+      },
 
-    "report only the missing parameters as missing" in {
-      Parser.extractParameters(Seq("--password", "xxx", "-v", "-k"), specNamedParams) should failWithErrors(
-        MissingNamedParameter(Set("--username", "--name", "-u"))
-      )
-    }
+      test("report only the missing parameters as missing") {
+        assert(Parser.extractParameters(Seq("--password", "xxx", "-v", "-k"), specNamedParams))(failWithErrors(
+          MissingNamedParameter(Set("--username", "--name", "-u"))
+        ))
+      },
 
-    "simple parameters can be interleaved with others" in {
-      Parser.extractParameters(Seq("-v", "/home/user/x.in", "--name", "test", "/home/user/x.out"), specMix) should beRight(
-        ("test", true, new File("/home/user/x.in").toPath, new File("/home/user/x.out").toPath)
-      )
-    }
+      test("simple parameters can be interleaved with others") {
+        assert(Parser.extractParameters(Seq("-v", "/home/user/x.in", "--name", "test", "/home/user/x.out"), specMix))(isRight(equalTo(
+          ("test", true, new File("/home/user/x.in").toPath, new File("/home/user/x.out").toPath)
+        )))
+      },
 
-    "be able to collect multiple named parameters" in {
-      Parser.extractParameters(Seq("--name", "1", "--other", "param", "--username", "2", "-n", "3"), specMultiNamedParams) should beRight(
-        (List("1", "2", "3"))
-      )
-    }
+      test("be able to collect multiple named parameters") {
+        assert(Parser.extractParameters(Seq("--name", "1", "--other", "param", "--username", "2", "-n", "3"), specMultiNamedParams))(isRight(equalTo(
+          List("1", "2", "3")
+        )))
+      },
 
-    "optional named parameter works" in {
-      val spec = for {
-        required <- namedParameter[String]("A required parameter", "value", "required")
-        nonRequired <- optional(namedParameter[String]("An optional parameter", "value", "optional"))
-      } yield (required, nonRequired)
-
-      Parser.extractParameters(Seq("--required", "x", "--optional", "y"), spec) should beRight(
-        ("x", Some("y"))
-      )
-
-      Parser.extractParameters(Seq("--required", "x"), spec) should beRight(
-        ("x", None)
-      )
-    }
-
-    "optional simple parameter works" in {
-      val spec = for {
-        required <- parameter[String]("A required parameter", "value")
-        nonRequired <- optional(parameter[String]("An optional parameter", "value"))
-      } yield (required, nonRequired)
-
-      Parser.extractParameters(Seq("x", "y"), spec) should beRight(
-        ("x", Some("y"))
-      )
-
-      Parser.extractParameters(Seq("x"), spec) should beRight(
-        ("x", None)
-      )
-    }
-
-    "optional multiple parameter blocks" in {
-      val spec = for {
-        required <- namedParameter[String]("A required parameter", "value", "required")
-        size <- optional {
-          for {
-            w <- namedParameter[Int]("Width", "integer", 'w', "width")
-            h <- namedParameter[Int]("Height", "integer", 'h', "height")
-          } yield (w, h)
-        }
-      } yield (required, size)
-
-      Parser.extractParameters(Seq("--required", "test", "-w", "10", "--height", "20"), spec) should beRight(
-        ("test", Some((10, 20)))
-      )
-
-      Parser.extractParameters(Seq("--required", "test", "-w", "10"), spec) should failWithErrors(
-        UnknownParameter("-w"), UnknownParameter("10")
-      )
-
-      Parser.extractParameters(Seq("--required", "test"), spec) should beRight(
-        ("test", None)
-      )
-    }
-
-    "accept valid command" in {
-      Parser.extractParameters(Seq("first", "--name", "test", "--password", "xxx"), specCommand) should beRight(
-        (false, Left(("test", "xxx")))
-      )
-
-      Parser.extractParameters(Seq("-v", "first", "--name", "test", "--password", "xxx"), specCommand) should beRight(
-        (true, Left(("test", "xxx")))
-      )
-
-      Parser.extractParameters(Seq("-v", "second"), specCommand) should beRight(
-        (true, Right(false))
-      )
-    }
-
-    "refuse invalid command" in {
-      Parser.extractParameters(Seq("third", "--name", "test", "--password", "xxx"), specCommand) should failWithErrors(
-        InvalidCommand("third", List("first", "second"))
-      )
-    }
-
-    "does not accept parameters after command" in {
-      Parser.extractParameters(Seq("first", "-v", "--name", "test", "--password", "xxx"), specCommand) should failWithErrors(
-        UnknownParameter("-v")
-      )
-    }
-
-    "custom failure with valid input" in {
-      Parser.extractParameters(Seq("--name", "test"), specCustomFailure) should beRight("test")
-    }
-
-    "custom failure with invalid input" in {
-      Parser.extractParameters(Seq.empty, specCustomFailure) should failWithErrors(
-        CustomError("name was not defined")
-      )
-    }
-
-    "lift arbitrary functions to the parser" in{
-      "success" in {
-        Parser.extractParameters(
-          Seq("-v"),
-          for {
-            verbose <- flag("verbose", 'v')
-            result <- lift("test", "ex1") { verbose.toString }
-          } yield result
-        ) should beRight(beEqualTo("true"))
-      }
-
-      "is suspended" in {
-        val builder = new StringBuilder
+      test("optional named parameter works") {
         val spec = for {
-          verbose <- flag("verbose", 'v')
-          result <- lift("test", "ex1") { builder.append("hello"); verbose.toString }
-        } yield result
+          required <- namedParameter[String]("A required parameter", "value", "required")
+          nonRequired <- optional(namedParameter[String]("An optional parameter", "value", "optional"))
+        } yield (required, nonRequired)
 
-        val before = builder.toString()
+        assert(Parser.extractParameters(Seq("--required", "x", "--optional", "y"), spec))(isRight(equalTo((
+          ("x", Some("y"))
+          )))) &&
+          assert(Parser.extractParameters(Seq("--required", "x"), spec))(isRight(equalTo(
+            ("x", None)
+          )))
+      },
 
-        val result = Parser.extractParameters(
-          Seq("-v"),
-          spec
-        )
-        val after = builder.toString()
+      test("optional simple parameter works") {
+        val spec = for {
+          required <- parameter[String]("A required parameter", "value")
+          nonRequired <- optional(parameter[String]("An optional parameter", "value"))
+        } yield (required, nonRequired)
 
-        (before must beEqualTo("")) and
-          (result should beRight(beEqualTo("true"))) and
-          (after must not(beEqualTo(""))) // NOTE: not guaranteed that the effect runs only once
-      }
+        assert(Parser.extractParameters(Seq("x", "y"), spec))(isRight(equalTo(
+          ("x", Some("y"))
+        ))) &&
+          assert(Parser.extractParameters(Seq("x"), spec))(isRight(equalTo(
+            ("x", None)
+          )))
+      },
 
-      "throwing exception" in {
-        Parser.extractParameters(
-          Seq("-v"),
-          for {
+      test("optional multiple parameter blocks") {
+        val spec = for {
+          required <- namedParameter[String]("A required parameter", "value", "required")
+          size <- optional {
+            for {
+              w <- namedParameter[Int]("Width", "integer", 'w', "width")
+              h <- namedParameter[Int]("Height", "integer", 'h', "height")
+            } yield (w, h)
+          }
+        } yield (required, size)
+
+        assert(Parser.extractParameters(Seq("--required", "test", "-w", "10", "--height", "20"), spec))(isRight(equalTo(
+          ("test", Some((10, 20)))
+        ))) &&
+          assert(Parser.extractParameters(Seq("--required", "test", "-w", "10"), spec))(failWithErrors(
+            UnknownParameter("-w"), UnknownParameter("10")
+          )) &&
+          assert(Parser.extractParameters(Seq("--required", "test"), spec))(isRight(equalTo(
+            ("test", None)
+          )))
+      },
+
+      test("accept valid command") {
+        assert(Parser.extractParameters(Seq("first", "--name", "test", "--password", "xxx"), specCommand)
+        )(isRight(equalTo(
+          (false, Left(("test", "xxx")))
+        ))) &&
+          assert(Parser.extractParameters(Seq("-v", "first", "--name", "test", "--password", "xxx"), specCommand)
+          )(isRight(equalTo(
+            (true, Left(("test", "xxx")))
+          ))) &&
+          assert(Parser.extractParameters(Seq("-v", "second"), specCommand)
+          )(isRight(equalTo(
+            (true, Right(false))
+          )))
+      },
+
+      test("refuse invalid command") {
+        assert(Parser.extractParameters(Seq("third", "--name", "test", "--password", "xxx"), specCommand))(failWithErrors(
+          InvalidCommand("third", List("first", "second"))
+        ))
+      },
+
+      test("does not accept parameters after command") {
+        assert(Parser.extractParameters(Seq("first", "-v", "--name", "test", "--password", "xxx"), specCommand))(failWithErrors(
+          UnknownParameter("-v")
+        ))
+      },
+
+      test("custom failure with valid input") {
+        assert(Parser.extractParameters(Seq("--name", "test"), specCustomFailure)
+        )(isRight(equalTo("test")))
+      },
+
+      test("custom failure with invalid input") {
+        assert(Parser.extractParameters(Seq.empty, specCustomFailure))(failWithErrors(
+          CustomError("name was not defined")
+        ))
+      },
+
+      suite("lift arbitrary functions to the parser")(
+        test("success") {
+          assert(Parser.extractParameters(
+            Seq("-v"),
+            for {
+              verbose <- flag("verbose", 'v')
+              result <- lift("test", "ex1") {
+                verbose.toString
+              }
+            } yield result
+          )
+          )(isRight(equalTo("true")))
+        },
+
+        test("is suspended") {
+          val builder = new StringBuilder
+          val spec = for {
             verbose <- flag("verbose", 'v')
-            result <- lift("test", "ex1") { throw new RuntimeException("lifted function fails") }
+            result <- lift("test", "ex1") {
+              builder.append("hello");
+              verbose.toString
+            }
           } yield result
-        ) should failWithErrors(CustomError("lifted function fails"))
-      }
-    }
 
-    "liftEither arbitrary functions to the parser" in {
-      "success" in {
-        Parser.extractParameters(
-          Seq("-v"),
-          for {
-            verbose <- flag("verbose", 'v')
-            result <- liftEither[String, String]("test", "ex1") { Right(verbose.toString) }
-          } yield result
-        ) should beRight(beEqualTo("true"))
-      }
+          val before = builder.toString()
 
-      "failure" in {
-        Parser.extractParameters(
-          Seq("-v"),
-          for {
-            verbose <- flag("verbose", 'v')
-            result <- liftEither("test", "ex1") { Left("lifted function fails") }
-          } yield result
-        ) should failWithErrors(CustomError("lifted function fails"))
-      }
-    }
+          val result = Parser.extractParameters(
+            Seq("-v"),
+            spec
+          )
+          val after = builder.toString()
 
-    "liftTry arbitrary functions to the parser" in {
-      "success" in {
-        Parser.extractParameters(
-          Seq("-v"),
-          for {
-            verbose <- flag("verbose", 'v')
-            result <- liftTry("test", "ex1") { Success(verbose.toString) }
-          } yield result
-        ) should beRight(beEqualTo("true"))
-      }
+          assert(before)(equalTo("")) &&
+            assert(result)(isRight(equalTo("true"))) &&
+            assert(after)(not(equalTo(""))) // NOTE: not guaranteed that the effect runs only once
+        },
 
-      "failure" in {
-        Parser.extractParameters(
-          Seq("-v"),
-          for {
-            verbose <- flag("verbose", 'v')
-            result <- liftTry("test", "ex1") { Failure(new RuntimeException("lifted function fails")) }
-          } yield result
-        ) should failWithErrors(CustomError("lifted function fails"))
-      }
-    }
-  }
+        test("throwing exception") {
+          assert(Parser.extractParameters(
+            Seq("-v"),
+            for {
+              verbose <- flag("verbose", 'v')
+              result <- lift("test", "ex1") {
+                throw new RuntimeException("lifted function fails")
+              }
+            } yield result
+          ))(failWithErrors(CustomError("lifted function fails")))
+        }
+      ),
 
-  private def failWithErrors[T](error0: ParserError, errorss: ParserError*): Matcher[Either[ParserFailure, T]] =
-    (result: Either[ParserFailure, T]) =>
-      result match {
-        case Right(_) => ko("Expected failure, got success")
-        case Left(ParserFailure(errors, _, _)) =>
-          errors should beEqualTo(NonEmptyList(error0, errorss.toList))
-      }
+      suite("liftEither arbitrary functions to the parser")(
+        test("success") {
+          assert(Parser.extractParameters(
+            Seq("-v"),
+            for {
+              verbose <- flag("verbose", 'v')
+              result <- liftEither[String, String]("test", "ex1") {
+                Right(verbose.toString)
+              }
+            } yield result
+          )
+          )(isRight(equalTo("true")))
+        },
+
+        test("failure") {
+          assert(Parser.extractParameters(
+            Seq("-v"),
+            for {
+              verbose <- flag("verbose", 'v')
+              result <- liftEither("test", "ex1") {
+                Left("lifted function fails")
+              }
+            } yield result
+          ))(failWithErrors(CustomError("lifted function fails")))
+        }
+      ),
+
+      suite("liftTry arbitrary functions to the parser")(
+        test("success") {
+          assert(Parser.extractParameters(
+            Seq("-v"),
+            for {
+              verbose <- flag("verbose", 'v')
+              result <- liftTry("test", "ex1") {
+                Success(verbose.toString)
+              }
+            } yield result
+          )
+          )(isRight(equalTo("true")))
+        },
+
+        test("failure") {
+          assert(Parser.extractParameters(
+            Seq("-v"),
+            for {
+              verbose <- flag("verbose", 'v')
+              result <- liftTry("test", "ex1") {
+                Failure(new RuntimeException("lifted function fails"))
+              }
+            } yield result
+          ))(failWithErrors(CustomError("lifted function fails")))
+        }
+      )
+    )
+
+  private def failWithErrors[T](error0: ParserError, errorss: ParserError*): Assertion[Either[ParserFailure, T]] =
+    isLeft(hasField("errors", (f: ParserFailure) => f.errors, equalTo(NonEmptyList(error0, errorss.toList))))
+
 }

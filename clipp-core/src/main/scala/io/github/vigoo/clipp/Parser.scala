@@ -206,7 +206,7 @@ object Parser {
         firstMatch = state.nonParsedArguments.map(_.value).find(p => !p.startsWith("-"))
         result <- firstMatch match {
           case Some(value) => parseString(simpleParam.parameterParser, value)
-          case None => failWith(MissingSimpleParameter(simpleParam.placeholder))
+          case None => failWith[T](MissingSimpleParameter(simpleParam.placeholder))
         }
         _ <- setState(
           firstMatch match {
@@ -238,20 +238,20 @@ object Parser {
                   if (cmd.validCommands.contains(positionedParameter.value)) {
                     pure(positionedParameter)
                   } else {
-                    failWith(InvalidCommand(positionedParameter.value, cmd.validCommands))
+                    failWith[PositionedParameter](InvalidCommand(positionedParameter.value, cmd.validCommands))
                   }
                 case _ =>
-                  failWith(CommandPositionIsNotStatic(cmd.validCommands))
+                  failWith[PositionedParameter](CommandPositionIsNotStatic(cmd.validCommands))
               }
             } else {
               if (cmd.validCommands.contains(positionedParameter.value)) {
                 pure(positionedParameter)
               } else {
-                failWith(InvalidCommand(positionedParameter.value, cmd.validCommands))
+                failWith[PositionedParameter](InvalidCommand(positionedParameter.value, cmd.validCommands))
               }
             }
           case None =>
-            failWith(MissingCommand(cmd.validCommands))
+            failWith[PositionedParameter](MissingCommand(cmd.validCommands))
         }
         _ <- setState(
           firstMatch match {
