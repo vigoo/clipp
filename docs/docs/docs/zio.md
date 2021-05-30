@@ -7,7 +7,7 @@ title: ZIO
 To use the ZIO interface add the following dependency:
 
 ```scala
-libraryDependencies += "io.github.vigoo" %% "clipp-zio" % "0.6.0"
+libraryDependencies += "io.github.vigoo" %% "clipp-zio" % "0.6.1"
 ```
 
 It is possible to directly call the ZIO interface wrapper, for example:
@@ -27,7 +27,7 @@ object Test1 extends zio.App {
     } yield x
 
     Clipp.parseOrDisplayUsageInfo(args, paramSpec, ExitCode.failure) { x =>
-      console.putStrLn(s"x was: $x").as(ExitCode.success)      
+      console.putStrLn(s"x was: $x").ignore.as(ExitCode.success)
     }.catchAll { _: ParserFailure => ZIO.succeed(ExitCode.failure) }
   }
 } 
@@ -53,7 +53,7 @@ object Test2 extends zio.App {
     val clippConfig = parametersFromArgs(args, paramSpec).printUsageInfoOnFailure
     val program = for {
         x <- parameters[Boolean]
-        _ <- console.putStrLn(s"x was: $x")
+        _ <- console.putStrLn(s"x was: $x").ignore
     } yield ExitCode.success
     
     program
