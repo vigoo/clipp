@@ -132,7 +132,11 @@ lazy val docs = project
     publishArtifact := false,
     siteSubdirName in ScalaUnidoc := "api",
     addMappingsToSiteDir(mappings in (ScalaUnidoc, packageDoc), siteSubdirName in ScalaUnidoc),
-    unidocProjectFilter in ( ScalaUnidoc, unidoc ) := inAnyProject,
+    unidocProjectFilter in ( ScalaUnidoc, unidoc ) := inProjects(
+      core,
+      catsEffect,
+      zio
+    ),
     git.remoteRepo := "git@github.com:vigoo/clipp.git",
     micrositeUrl := "https://vigoo.github.io",
     micrositeBaseUrl := "/clipp",
