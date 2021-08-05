@@ -101,8 +101,8 @@ lazy val catsEffect = Project("clipp-cats-effect", file("clipp-cats-effect")).se
 
   libraryDependencies ++= Seq(
     "org.typelevel" %% "cats-effect" % "2.5.3",
-    "dev.zio" %% "zio-test" % "1.0.9" % Test,
-    "dev.zio" %% "zio-test-sbt" % "1.0.9" % Test,
+    "dev.zio" %% "zio-test" % "1.0.10" % Test,
+    "dev.zio" %% "zio-test-sbt" % "1.0.10" % Test,
   ),
 
   testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework")
