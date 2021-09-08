@@ -126,7 +126,7 @@ lazy val catsEffect3 = Project("clipp-cats-effect3", file("clipp-cats-effect3"))
   description := "Clipp Cats-Effect 3 interface",
 
   libraryDependencies ++= Seq(
-    "org.typelevel" %% "cats-effect" % "3.2.8",
+    "org.typelevel" %% "cats-effect" % "3.2.7",
     "dev.zio" %% "zio-test" % "1.0.11" % Test,
     "dev.zio" %% "zio-test-sbt" % "1.0.11" % Test,
   ),
@@ -177,6 +177,8 @@ lazy val docs = project
     ),
     //micrositeAnalyticsToken := "UA-56320875-2",
     includeFilter in makeSite := "*.html" | "*.css" | "*.png" | "*.jpg" | "*.gif" | "*.js" | "*.swf" | "*.txt" | "*.xml" | "*.svg",
+    micrositePushSiteWith := GitHub4s,
+    micrositeGithubToken := sys.env.get("ADMIN_GITHUB_TOKEN")
   )
   .dependsOn(core, catsEffect, zio)
 
