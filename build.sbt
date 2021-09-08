@@ -96,6 +96,20 @@ lazy val zio = Project("clipp-zio", file("clipp-zio")).settings(commonSettings).
   testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework")
 ).dependsOn(core)
 
+lazy val zio2 = Project("clipp-zio-2", file("clipp-zio-2")).settings(commonSettings).settings(
+  description := "Clipp ZIO 2 interface",
+
+  resolvers +=
+    "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots",
+  libraryDependencies ++= Seq(
+    "dev.zio" %% "zio" % "2.0.0-M2+72-616ee01d-SNAPSHOT",
+    "dev.zio" %% "zio-test" % "2.0.0-M2+72-616ee01d-SNAPSHOT" % Test,
+    "dev.zio" %% "zio-test-sbt" % "2.0.0-M2+72-616ee01d-SNAPSHOT" % Test
+  ),
+
+  testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework")
+).dependsOn(core)
+
 lazy val catsEffect = Project("clipp-cats-effect", file("clipp-cats-effect")).settings(commonSettings).settings(
   description := "Clipp Cats-Effect interface",
 
@@ -131,8 +145,8 @@ lazy val docs = project
     description := "Functional command line argument parser and usage info generator for Scala",
     publishArtifact := false,
     siteSubdirName in ScalaUnidoc := "api",
-    addMappingsToSiteDir(mappings in (ScalaUnidoc, packageDoc), siteSubdirName in ScalaUnidoc),
-    unidocProjectFilter in ( ScalaUnidoc, unidoc ) := inProjects(
+    addMappingsToSiteDir(mappings in(ScalaUnidoc, packageDoc), siteSubdirName in ScalaUnidoc),
+    unidocProjectFilter in(ScalaUnidoc, unidoc) := inProjects(
       core,
       catsEffect,
       zio
