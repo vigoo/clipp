@@ -71,7 +71,7 @@ lazy val commonSettings =
 
 lazy val root = Project("clipp", file(".")).settings(commonSettings).settings(
   publishArtifact := false
-) aggregate(core, zio, catsEffect, catsEffect3)
+) aggregate(core, zio, zio2, catsEffect, catsEffect3)
 
 lazy val core = Project("clipp-core", file("clipp-core")).settings(commonSettings).settings(
   description := "Clipp core",

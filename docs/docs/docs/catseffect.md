@@ -8,7 +8,7 @@ title: Cats Effect
 To use the Cats-Effect interface add the following dependency:
 
 ```scala
-libraryDependencies += "io.github.vigoo" %% "clipp-cats-effect" % "0.6.2"
+libraryDependencies += "io.github.vigoo" %% "clipp-cats-effect" % "0.6.3"
 ```
 
 Example:
@@ -39,7 +39,7 @@ object Test extends IOApp {
 To use the Cats-Effect interface add the following dependency:
 
 ```scala
-libraryDependencies += "io.github.vigoo" %% "clipp-cats-effect3" % "0.6.2"
+libraryDependencies += "io.github.vigoo" %% "clipp-cats-effect3" % "0.6.3"
 ```
 
 Example:

@@ -7,7 +7,7 @@ title: ZIO
 To use the ZIO interface add the following dependency:
 
 ```scala
-libraryDependencies += "io.github.vigoo" %% "clipp-zio" % "0.6.2"
+libraryDependencies += "io.github.vigoo" %% "clipp-zio" % "0.6.3"
 ```
 
 It is possible to directly call the ZIO interface wrapper, for example:
@@ -82,7 +82,7 @@ ZIO 2 support is currently published separately for snapshot versions of ZIO. On
 one clipp-zio artifact maintained.
 
 ```scala
-libraryDependencies += "io.github.vigoo" %% "clipp-zio-2" % "0.6.2"
+libraryDependencies += "io.github.vigoo" %% "clipp-zio-2" % "0.6.3"
 ```
 
 The only difference currently is that instead of providing the list of arguments as a parameter, Clipp takes it from the 
