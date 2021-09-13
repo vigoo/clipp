@@ -57,7 +57,7 @@ object ZioSpecs extends DefaultRunnableSpec {
         val test: ZIO[Has[String], Nothing, TestResult] =
           parameters[String].map(p => assert(p)(equalTo("test")))
 
-        test.provideSomeLayer(config)
+        test.injectCustom(ZLayer.succeed(ZIOAppArgs(Chunk.empty)), config)
       },
       test("failure") {
         val config = effectfulParametersFromArgs[Any, String] { p =>
@@ -66,7 +66,7 @@ object ZioSpecs extends DefaultRunnableSpec {
           }
         }
 
-        assertM(parameters[String].unit.provideSomeLayer(config).run)(fails(
+        assertM(parameters[String].unit.injectCustom(ZLayer.succeed(ZIOAppArgs(Chunk.empty)), config).exit)(fails(
           hasField("errors", _.errors.toList, contains[ParserError](CustomError("failure")))))
       }
     )
