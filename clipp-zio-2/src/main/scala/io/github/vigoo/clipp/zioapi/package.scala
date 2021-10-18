@@ -69,7 +69,7 @@ package object zioapi {
   def parametersFromArgs[T: Tag](spec: Parameter.Spec[T]): ZLayer[Has[Console] with Has[ZIOAppArgs], ParserFailure, Has[T]] =
     (for {
       args <- ZIO.service[ZIOAppArgs]
-      result <- Clipp.parseOrFail(args.args, spec)
+      result <- Clipp.parseOrFail(args.getArgs, spec)
     } yield result).toLayer
 
   def effectfulParametersFromArgs[R, T: Tag](createSpec: ZioDSL[R] => Parameter.Spec[T]): ZLayer[Has[Console] with Has[ZIOAppArgs] with R, ParserFailure, Has[T]] = {
@@ -77,7 +77,7 @@ package object zioapi {
       runtime <- ZIO.runtime[R]
       args <- ZIO.service[ZIOAppArgs]
       spec = createSpec(ZioDSL(runtime))
-      result <- Clipp.parseOrFail(args.args, spec)
+      result <- Clipp.parseOrFail(args.getArgs, spec)
     } yield result
   }.toLayer
 
