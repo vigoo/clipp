@@ -102,9 +102,9 @@ lazy val zio2 = Project("clipp-zio-2", file("clipp-zio-2")).settings(commonSetti
   resolvers +=
     "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots",
   libraryDependencies ++= Seq(
-    "dev.zio" %% "zio" % "2.0.0-M4",
-    "dev.zio" %% "zio-test" % "2.0.0-M4" % Test,
-    "dev.zio" %% "zio-test-sbt" % "2.0.0-M4" % Test
+    "dev.zio" %% "zio" % "2.0.0-M6-1",
+    "dev.zio" %% "zio-test" % "2.0.0-M6-1" % Test,
+    "dev.zio" %% "zio-test-sbt" % "2.0.0-M6-1" % Test
   ),
 
   testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework")
