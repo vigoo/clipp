@@ -16,11 +16,11 @@ object UsageInfoExtractor {
 
   sealed trait GraphNode
 
-  case class DescribedParameter(parameter: Parameter[_], isInOptionalBlock: Boolean) extends GraphNode
+  case class DescribedParameter(parameter: Parameter[?], isInOptionalBlock: Boolean) extends GraphNode
 
   case class PathEnd(uniqueId: UUID) extends GraphNode
 
-  type MergedChoices = Map[Parameter[_], Set[Choice]]
+  type MergedChoices = Map[Parameter[?], Set[Choice]]
   type ResultGraph = Graph[GraphNode, Choices]
 
   case class UsageDescription(resultGraph: ResultGraph, metadata: Option[ParameterParserMetadata])
@@ -31,16 +31,16 @@ object UsageInfoExtractor {
                                    fixedChoices: Choices,
                                    metadata: Option[ParameterParserMetadata])
 
-  private type UsageInfoExtractor = Fx.fx3[Choose, Writer[ResultGraph, *], State[ExtractUsageInfoState, *]]
+  private type UsageInfoExtractor = Fx.fx3[Choose, Writer[ResultGraph, _], State[ExtractUsageInfoState, _]]
   private type UsageInfoM[A] = Eff[UsageInfoExtractor, A]
 
   private val usageInfoExtractor: Parameter ~> UsageInfoM = new (Parameter ~> UsageInfoM) {
     override def apply[A](fa: Parameter[A]): UsageInfoM[A] = fa match {
       case flag: Flag =>
         impl.flag(flag)
-      case namedParameter: NamedParameter[_] =>
+      case namedParameter: NamedParameter[?] =>
         impl.namedParameter(namedParameter, namedParameter.parameterParser.example)
-      case simpleParameter: SimpleParameter[_] =>
+      case simpleParameter: SimpleParameter[?] =>
         impl.simpleParameter(simpleParameter, simpleParameter.parameterParser.example)
       case command: Command =>
         impl.command(command)
@@ -50,7 +50,7 @@ object UsageInfoExtractor {
         impl.setMetadata(metadata)
       case Fail(message) =>
         impl.fail(message)
-      case l: Lift[_] =>
+      case l: Lift[?] =>
         impl.liftExternal(l)
     }
   }

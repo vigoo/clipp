@@ -109,7 +109,7 @@ object UsageInfo {
   }
 
   private def mergeChoices(choices: Set[Choices]): MergedChoices = {
-    choices.foldLeft(Map.empty[Parameter[_], Set[Choice]]) { case (r1, cs) =>
+    choices.foldLeft(Map.empty[Parameter[?], Set[Choice]]) { case (r1, cs) =>
       cs.foldLeft(r1) { case (r2, (param, choice)) =>
         r2.updated(param, r2.getOrElse(param, Set.empty) + choice)
       }

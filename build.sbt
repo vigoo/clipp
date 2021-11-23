@@ -6,12 +6,12 @@ name := "clipp"
 dynverSonatypeSnapshots in ThisBuild := true
 
 val scala212 = "2.12.15"
-val scala213 = "2.13.6"
+val scala213 = "2.13.7"
 val scala3 = "3.1.0"
 
-val scalacOptions212 = Seq("-Ypartial-unification", "-deprecation")
-val scalacOptions213 = Seq("-deprecation")
-val scalacOptions3 = Seq("-deprecation", "-Ykind-projector")
+val scalacOptions212 = Seq("-Ypartial-unification", "-deprecation", "-P:kind-projector:underscore-placeholders", "-Xsource:3")
+val scalacOptions213 = Seq("-deprecation", "-P:kind-projector:underscore-placeholders", "-Xsource:3")
+val scalacOptions3 = Seq("-deprecation", "-Ykind-projector:underscores", "-source", "future",  "-Yno-kind-polymorphism")
 
 lazy val commonSettings =
   Seq(

@@ -314,7 +314,7 @@ object UsageInfoSpecs extends DefaultRunnableSpec {
 
   private def bePrintNodeOfLift[T](): Assertion[PrettyPrintCommand] =
     isSubtype[PrintNode](
-      hasField("parameter", (node: PrintNode) => node.param.parameter, isSubtype[Lift[_]](anything)) &&
+      hasField("parameter", (node: PrintNode) => node.param.parameter, isSubtype[Lift[?]](anything)) &&
         hasField("isInOptionalBlock", (node: PrintNode) => node.param.isInOptionalBlock, isFalse)
     )
 

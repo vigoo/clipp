@@ -40,5 +40,5 @@ object choices {
 
   final case class ArbitraryChoice(value: Any) extends Choice
 
-  type Choices = Map[Parameter[_], Choice]
+  type Choices = Map[Parameter[?], Choice]
 }

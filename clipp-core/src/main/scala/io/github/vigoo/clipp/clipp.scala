@@ -98,4 +98,4 @@ object Parameter {
   type Spec[T] = Free[Parameter, T]
 }
 
-case class ParserFailure(errors: NonEmptyList[ParserError], partialChoices: Choices, spec: Free[Parameter, _])
+case class ParserFailure(errors: NonEmptyList[ParserError], partialChoices: Choices, spec: Free[Parameter, ?])

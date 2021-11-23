@@ -23,7 +23,7 @@ object Parser {
       }
     }
   }
-  private type ExtractStateM[A] = EitherT[State[ExtractParametersState, *], NonEmptyList[ParserError], A]
+  private type ExtractStateM[A] = EitherT[State[ExtractParametersState, _], NonEmptyList[ParserError], A]
   private type CommandLocatorM[A] = WriterT[ExtractStateM, List[CommandLocation], A]
 
   private val commandLocator: Parameter ~> CommandLocatorM = new (Parameter ~> CommandLocatorM) {
@@ -36,9 +36,9 @@ object Parser {
     override def apply[A](fa: Parameter[A]): CommandLocatorM[A] = fa match {
       case flag: Flag =>
         lift(impl.flag(flag))
-      case namedParam: NamedParameter[_] =>
+      case namedParam: NamedParameter[?] =>
         lift(impl.namedParameter(namedParam))
-      case simpleParam: SimpleParameter[_] =>
+      case simpleParam: SimpleParameter[?] =>
         lift(impl.simpleParameter(simpleParam))
       case cmd: Command =>
         lift(impl.command(cmd, validateCommandLocations = false)).flatMap { pp =>
@@ -60,9 +60,9 @@ object Parser {
     override def apply[A](fa: Parameter[A]): ExtractStateM[A] = fa match {
       case flag: Flag =>
         impl.flag(flag)
-      case namedParam: NamedParameter[_] =>
+      case namedParam: NamedParameter[?] =>
         impl.namedParameter(namedParam)
-      case simpleParam: SimpleParameter[_] =>
+      case simpleParam: SimpleParameter[?] =>
         impl.simpleParameter(simpleParam)
       case cmd: Command =>
         impl.command(cmd, validateCommandLocations = true).map(_.value)
