@@ -40,8 +40,8 @@ object ZioSpecs extends DefaultRunnableSpec {
 
     test("can provide as layer") {
       val spec = flag("Test", 'x')
-      val config: ZLayer[Has[Console] with Has[ZIOAppArgs], ParserFailure, Has[Boolean]] = parametersFromArgs(spec).printUsageInfoOnFailure
-      val test: ZIO[Has[Boolean], Nothing, TestResult] =
+      val config: ZLayer[Console & ZIOAppArgs, ParserFailure, Boolean] = parametersFromArgs(spec).printUsageInfoOnFailure
+      val test: ZIO[Boolean, Nothing, TestResult] =
         parameters[Boolean].map(p => assert(p)(isTrue))
 
       test.injectCustom(ZLayer.succeed(ZIOAppArgs(Chunk("-x"))), config)
@@ -54,7 +54,7 @@ object ZioSpecs extends DefaultRunnableSpec {
             ZIO.succeed("test")
           }
         }
-        val test: ZIO[Has[String], Nothing, TestResult] =
+        val test: ZIO[String, Nothing, TestResult] =
           parameters[String].map(p => assert(p)(equalTo("test")))
 
         test.injectCustom(ZLayer.succeed(ZIOAppArgs(Chunk.empty)), config)
