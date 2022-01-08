@@ -29,8 +29,8 @@ lazy val commonSettings =
       }),
 
     libraryDependencies ++= Seq(
-      "org.typelevel" %% "cats-core" % "2.6.1",
-      "org.typelevel" %% "cats-free" % "2.6.1",
+      "org.typelevel" %% "cats-core" % "2.7.0",
+      "org.typelevel" %% "cats-free" % "2.7.0",
 
       "org.atnos" %% "eff" % "5.21.0",
     ),
