@@ -57,6 +57,8 @@ lazy val commonSettings =
       Developer(id = "vigoo", name = "Daniel Vigovszky", email = "daniel.vigovszky@gmail.com", url = url("https://vigoo.github.io"))
     ),
 
+    sonatypeCredentialHost := "s01.oss.sonatype.org",
+    sonatypeRepository     := "https://s01.oss.sonatype.org/service/local",
     credentials ++=
       (for {
         username <- Option(System.getenv().get("SONATYPE_USERNAME"))
@@ -64,7 +66,7 @@ lazy val commonSettings =
       } yield
         Credentials(
           "Sonatype Nexus Repository Manager",
-          "oss.sonatype.org",
+          "s01.oss.sonatype.org",
           username,
           password)).toSeq
   )
