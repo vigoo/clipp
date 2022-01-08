@@ -29,10 +29,10 @@ lazy val commonSettings =
       }),
 
     libraryDependencies ++= Seq(
-      "org.typelevel" %% "cats-core" % "2.6.1",
-      "org.typelevel" %% "cats-free" % "2.6.1",
+      "org.typelevel" %% "cats-core" % "2.7.0",
+      "org.typelevel" %% "cats-free" % "2.7.0",
 
-      "org.atnos" %% "eff" % "5.21.0",
+      "org.atnos" %% "eff" % "5.22.0",
     ),
 
     coverageEnabled in(Test, compile) := true,
@@ -102,9 +102,9 @@ lazy val zio2 = Project("clipp-zio-2", file("clipp-zio-2")).settings(commonSetti
   resolvers +=
     "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots",
   libraryDependencies ++= Seq(
-    "dev.zio" %% "zio" % "2.0.0-M4",
-    "dev.zio" %% "zio-test" % "2.0.0-M4" % Test,
-    "dev.zio" %% "zio-test-sbt" % "2.0.0-M4" % Test
+    "dev.zio" %% "zio" % "2.0.0-RC1",
+    "dev.zio" %% "zio-test" % "2.0.0-RC1" % Test,
+    "dev.zio" %% "zio-test-sbt" % "2.0.0-RC1" % Test
   ),
 
   testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework")
@@ -126,7 +126,7 @@ lazy val catsEffect3 = Project("clipp-cats-effect3", file("clipp-cats-effect3"))
   description := "Clipp Cats-Effect 3 interface",
 
   libraryDependencies ++= Seq(
-    "org.typelevel" %% "cats-effect" % "3.2.9",
+    "org.typelevel" %% "cats-effect" % "3.3.3",
     "dev.zio" %% "zio-test" % "1.0.12" % Test,
     "dev.zio" %% "zio-test-sbt" % "1.0.12" % Test,
   ),
