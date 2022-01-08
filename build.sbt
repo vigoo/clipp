@@ -41,7 +41,7 @@ lazy val commonSettings =
     scalacOptions ++= (CrossVersion.partialVersion(scalaVersion.value) match {
       case Some((2, 12)) => scalacOptions212
       case Some((2, 13)) => scalacOptions213
-      case Some((3, 0)) => scalacOptions3
+      case Some((3, _)) => scalacOptions3
       case _ => Nil
     }),
 
