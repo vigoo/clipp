@@ -7,7 +7,7 @@ import zio.{Console, _}
 import zio.test.Assertion._
 import zio.test._
 
-object ZioSpecs extends DefaultRunnableSpec {
+object ZioSpecs extends ZIOSpecDefault {
 
   def spec = suite("ZIO interface")(
     test("successfully parse") {
@@ -40,11 +40,11 @@ object ZioSpecs extends DefaultRunnableSpec {
 
     test("can provide as layer") {
       val spec = flag("Test", 'x')
-      val config: ZLayer[Console with ZIOAppArgs, ParserFailure, Boolean] = parametersFromArgs(spec).printUsageInfoOnFailure
+      val config: ZLayer[ZIOAppArgs, ParserFailure, Boolean] = parametersFromArgs(spec).printUsageInfoOnFailure
       val test: ZIO[Boolean, Nothing, TestResult] =
         parameters[Boolean].map(p => assert(p)(isTrue))
 
-      test.provideCustom(ZLayer.succeed(ZIOAppArgs(Chunk("-x"))), config)
+      test.provide(ZLayer.succeed(ZIOAppArgs(Chunk("-x"))), config)
     },
 
     suite("liftEffect")(
@@ -57,7 +57,7 @@ object ZioSpecs extends DefaultRunnableSpec {
         val test: ZIO[String, Nothing, TestResult] =
           parameters[String].map(p => assert(p)(equalTo("test")))
 
-        test.provideCustom(ZLayer.succeed(ZIOAppArgs(Chunk.empty)), config)
+        test.provide(ZLayer.succeed(ZIOAppArgs(Chunk.empty)), config)
       },
       test("failure") {
         val config = effectfulParametersFromArgs[Any, String] { p =>
@@ -66,7 +66,7 @@ object ZioSpecs extends DefaultRunnableSpec {
           }
         }
 
-        assertM(parameters[String].unit.provideCustom(ZLayer.succeed(ZIOAppArgs(Chunk.empty)), config).exit)(fails(
+        assertM(parameters[String].unit.provide(ZLayer.succeed(ZIOAppArgs(Chunk.empty)), config).exit)(fails(
           hasField("errors", _.errors.toList, contains[ParserError](CustomError("failure")))))
       }
     )

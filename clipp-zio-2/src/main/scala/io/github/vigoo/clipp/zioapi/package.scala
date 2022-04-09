@@ -5,7 +5,7 @@ import io.github.vigoo.clipp.errors.CustomParserError
 import zio.{CanFail, Console, IsNotIntersection, Runtime, Tag, URIO, ZIO, ZIOAppArgs, ZLayer}
 
 package object zioapi {
-  type ClippEnv = Console
+  type ClippEnv = Any
   type ClippZIO[+A] = ZIO[ClippEnv, ParserFailure, A]
 
   implicit val clippZio: ClippIO[ClippZIO] = new ClippIO[ClippZIO] {
@@ -66,22 +66,25 @@ package object zioapi {
       zioapi.liftURIO[R, T](description, example)(f)
   }
 
-  def parametersFromArgs[T: Tag : IsNotIntersection](spec: Parameter.Spec[T]): ZLayer[Console with ZIOAppArgs, ParserFailure, T] =
-    (for {
-      args <- ZIO.service[ZIOAppArgs]
-      result <- Clipp.parseOrFail(args.getArgs, spec)
-    } yield result).toLayer
+  def parametersFromArgs[T: Tag : IsNotIntersection](spec: Parameter.Spec[T]): ZLayer[ZIOAppArgs, ParserFailure, T] =
+    ZLayer {
+      for {
+        args <- ZIO.service[ZIOAppArgs]
+        result <- Clipp.parseOrFail(args.getArgs, spec)
+      } yield result
+    }
 
-  def effectfulParametersFromArgs[R, T: Tag : IsNotIntersection](createSpec: ZioDSL[R] => Parameter.Spec[T]): ZLayer[Console with ZIOAppArgs with R, ParserFailure, T] = {
+  def effectfulParametersFromArgs[R, T: Tag : IsNotIntersection](createSpec: ZioDSL[R] => Parameter.Spec[T]): ZLayer[ZIOAppArgs with R, ParserFailure, T] =
+    ZLayer {
     for {
       runtime <- ZIO.runtime[R]
       args <- ZIO.service[ZIOAppArgs]
       spec = createSpec(ZioDSL(runtime))
       result <- Clipp.parseOrFail(args.getArgs, spec)
     } yield result
-  }.toLayer
+  }
 
-  implicit class ZLayerOps[R <: Console, T](layer: ZLayer[R, ParserFailure, T]) {
+  implicit class ZLayerOps[R, T](layer: ZLayer[R, ParserFailure, T]) {
     def printUsageInfoOnFailure: ZLayer[R, ParserFailure, T] =
       layer.tapError { (parserFailure: ParserFailure) =>
         Clipp.displayErrorsAndUsageInfo(parserFailure)
