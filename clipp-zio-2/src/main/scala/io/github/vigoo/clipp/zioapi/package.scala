@@ -2,7 +2,7 @@ package io.github.vigoo.clipp
 
 import cats.data.NonEmptyList
 import io.github.vigoo.clipp.errors.CustomParserError
-import zio.{CanFail, Console, IsNotIntersection, Runtime, Tag, URIO, ZIO, ZIOAppArgs, ZLayer}
+import zio.{CanFail, Console, Runtime, Tag, URIO, ZIO, ZIOAppArgs, ZLayer}
 
 package object zioapi {
   type ClippEnv = Any
@@ -66,7 +66,7 @@ package object zioapi {
       zioapi.liftURIO[R, T](description, example)(f)
   }
 
-  def parametersFromArgs[T: Tag : IsNotIntersection](spec: Parameter.Spec[T]): ZLayer[ZIOAppArgs, ParserFailure, T] =
+  def parametersFromArgs[T: Tag](spec: Parameter.Spec[T]): ZLayer[ZIOAppArgs, ParserFailure, T] =
     ZLayer {
       for {
         args <- ZIO.service[ZIOAppArgs]
@@ -74,7 +74,7 @@ package object zioapi {
       } yield result
     }
 
-  def effectfulParametersFromArgs[R, T: Tag : IsNotIntersection](createSpec: ZioDSL[R] => Parameter.Spec[T]): ZLayer[ZIOAppArgs with R, ParserFailure, T] =
+  def effectfulParametersFromArgs[R, T: Tag](createSpec: ZioDSL[R] => Parameter.Spec[T]): ZLayer[ZIOAppArgs with R, ParserFailure, T] =
     ZLayer {
     for {
       runtime <- ZIO.runtime[R]
@@ -91,5 +91,5 @@ package object zioapi {
       }
   }
 
-  def parameters[T: Tag : IsNotIntersection]: URIO[T, T] = ZIO.service[T]
+  def parameters[T: Tag]: URIO[T, T] = ZIO.service[T]
 }

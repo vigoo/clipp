@@ -66,7 +66,7 @@ object ZioSpecs extends ZIOSpecDefault {
           }
         }
 
-        assertM(parameters[String].unit.provide(ZLayer.succeed(ZIOAppArgs(Chunk.empty)), config).exit)(fails(
+        assertZIO(parameters[String].unit.provide(ZLayer.succeed(ZIOAppArgs(Chunk.empty)), config).exit)(fails(
           hasField("errors", _.errors.toList, contains[ParserError](CustomError("failure")))))
       }
     )
