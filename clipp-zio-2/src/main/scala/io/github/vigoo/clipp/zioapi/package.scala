@@ -2,7 +2,7 @@ package io.github.vigoo.clipp
 
 import cats.data.NonEmptyList
 import io.github.vigoo.clipp.errors.CustomParserError
-import zio.{CanFail, Console, Runtime, Tag, URIO, ZIO, ZIOAppArgs, ZLayer}
+import zio.{CanFail, Console, Runtime, Tag, Unsafe, URIO, ZIO, ZIOAppArgs, ZLayer}
 
 package object zioapi {
   type ClippEnv = Any
@@ -32,22 +32,30 @@ package object zioapi {
 
   def liftZIO[R, E, T](description: String, examples: NonEmptyList[T])(f: ZIO[R, E, T])(implicit runtime: Runtime[R], ev: CanFail[E], customParserError: CustomParserError[E]): Parameter.Spec[T] =
     syntax.liftEither(description, examples) {
-      runtime.unsafeRun(f.either)
+      Unsafe.unsafeCompat { implicit u =>
+        runtime.unsafe.run(f.either).getOrThrowFiberFailure()
+      }
     }
 
   def liftZIO[R, E, T](description: String, example: T)(f: ZIO[R, E, T])(implicit runtime: Runtime[R], ev: CanFail[E], customParserError: CustomParserError[E]): Parameter.Spec[T] =
     syntax.liftEither(description, example) {
-      runtime.unsafeRun(f.either)
+      Unsafe.unsafeCompat { implicit u =>
+        runtime.unsafe.run(f.either).getOrThrowFiberFailure()
+      }
     }
 
   def liftURIO[R, T](description: String, examples: NonEmptyList[T])(f: URIO[R, T])(implicit runtime: Runtime[R]): Parameter.Spec[T] =
-    syntax.lift(description, examples) {
-      runtime.unsafeRun(f)
+    syntax.lift(description, examples) { 
+      Unsafe.unsafeCompat { implicit u =>
+        runtime.unsafe.run(f).getOrThrowFiberFailure()
+      }
     }
 
   def liftURIO[R, T](description: String, example: T)(f: URIO[R, T])(implicit runtime: Runtime[R]): Parameter.Spec[T] =
     syntax.lift(description, example) {
-      runtime.unsafeRun(f)
+      Unsafe.unsafeCompat { implicit u =>
+        runtime.unsafe.run(f).getOrThrowFiberFailure()
+      }
     }
 
   case class ZioDSL[R](runtime: Runtime[R]) extends syntax {
